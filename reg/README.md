@@ -1,4 +1,4 @@
-# `go-utils/reg`
+# `go-type/reg`
 
 Type registration mechanism built with minimal use of reflection.
 
