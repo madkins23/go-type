@@ -1,14 +1,12 @@
-# go-type
+# `go-type`
 
-Go language type registry.
+Go language type utilities.
 
-Provides a registry for named Go classes.
-The registry was constructed to support marshal/unmarshaling of Go objects.
-Support is provided for BSON (binary JSON used by Mongo), JSON, and YAML.
-This registry is intended to replace older code to be removed from
-[`go-utils`](https://github.com/madkins23/go-utils).
+Currently there is only one type utility which provides a registry for named Go classes.
+This is implemented in the `reg` package.
+Other type utilities may be added in the future.
 
-You are more than welcome to use this package as is but these are
+You are more than welcome to use this software as is but these are
 utility packages constructed by the author for use in personal projects.
 The author makes occasional changes and attempts to follow proper versioning and release protocols,
 however this code should not be considered production quality or maintained.
@@ -20,7 +18,13 @@ or [godoc](https://godoc.org/github.com/madkins23/go-type) for documentation.
 
 ## `reg`
 
-Type registration mechanism built with minimal use of reflection.
+This package provides a dynamic type registry.
+Since the Go language doesn't provide dynamic class lookup by name
+it is necessary to provide a way to register classes by name
+so that instances of those classes can be created by name later.
+
+This registry was mainly constructed to support marshal/unmarshaling of Go objects.
+Support is provided for BSON (binary JSON used by Mongo), JSON, and YAML.
 
 * `reg.Alias` creates an aliased Registry object for package-specific registration.
   First registration via this object does the alias registration automatically.
