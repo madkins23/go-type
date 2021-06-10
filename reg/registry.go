@@ -7,12 +7,13 @@ import (
 )
 
 const (
-	// Name of "type" field in serialized structs.
+	// TypeField is the name of the "type" field in serialized structs.
 	// This field name appears to be legal in JSON, YAML, and BSON (MongoDB).
 	TypeField        = "<type>"
 
-	// Alternate "type" field escaped for use in regular expression.
-	TypeFieldEscaped = "<type>"
+	// TypeFieldEscaped is an alternate "type" field escaped for use in a regular expression.
+	// This may be the same as TypeField if there are no regular expression characters.
+	TypeFieldEscaped = TypeField
 )
 
 // FromMapFn loads an object from a generic map.

@@ -1,4 +1,4 @@
-package reg
+package yaml
 
 import (
 	"bufio"
@@ -9,13 +9,15 @@ import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/madkins23/go-type/reg"
 )
 
 type YamlBase struct {
-	Registry
+	reg.Registry
 }
 
-func NewYamlBase(reg Registry) *YamlBase {
+func NewYamlBase(reg reg.Registry) *YamlBase {
 	return &YamlBase{Registry: reg}
 }
 
@@ -52,7 +54,7 @@ func (yb *YamlBase) LoadFromString(source string) (interface{}, error) {
 // loadFromReadSeeker loads a registered type from an open io.ReadSeeker.
 // This could have been an io.Reader but it is necessary to 'parse' the data twice.
 // The first time is just a scan for the top-level object type.
-// After scanning partially through the stream it must be reset.
+// After scanning partially through the stream must be reset for the second pass.
 func (yb *YamlBase) loadFromReadSeeker(reader io.ReadSeeker) (interface{}, error) {
 	if typeName, err := getYamlTypeNameAndReset(reader); err != nil {
 		return nil, fmt.Errorf("get YAML type name: %w", err)
@@ -99,7 +101,7 @@ func (yb *YamlBase) SaveToString(item interface{}) (string, error) {
 
 //////////////////////////////////////////////////////////////////////////
 
-var typeMatcher = regexp.MustCompile("^" + TypeFieldEscaped + ":\\s+(.+)$")
+var typeMatcher = regexp.MustCompile("^" + reg.TypeFieldEscaped + ":\\s+(.+)$")
 
 func getYamlTypeNameAndReset(seeker io.ReadSeeker) (string, error) {
 	buffered := bufio.NewReader(seeker)

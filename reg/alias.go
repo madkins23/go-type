@@ -27,7 +27,6 @@ func NewAlias(alias string, registry Registry) *Alias {
 // Actual registration passed along to package registry object.
 func (a *Alias) Register(example interface{}) error {
 	if !a.aliased {
-		fmt.Println("nar", a.alias)
 		if err := a.Alias(a.alias, example); err != nil {
 			return fmt.Errorf("register alias: %w", err)
 		}
