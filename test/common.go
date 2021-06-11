@@ -1,8 +1,9 @@
 package test
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/madkins23/go-type/convert"
 )
 
 // PackageName should be set to the known path for this package.
@@ -13,6 +14,8 @@ const PackageName = "github.com/madkins23/go-type/test"
 type Actor interface {
 	declaim() string
 }
+
+//////////////////////////////////////////////////////////////////////////
 
 type WithExtra struct {
 	extra string
@@ -25,6 +28,8 @@ func (we *WithExtra) Extra() string {
 func (we *WithExtra) ClearExtra() {
 	we.extra = ""
 }
+
+//////////////////////////////////////////////////////////////////////////
 
 type Alpha struct {
 	Name    string
@@ -41,6 +46,16 @@ func NewAlpha(name string, percent float32, extra string) *Alpha {
 func (a *Alpha) declaim() string {
 	return fmt.Sprintf("%s is %6.2f%%  complete", a.Name, a.Percent)
 }
+
+func (a *Alpha) PushToMap(toMap map[string]interface{}) error {
+	return convert.PushItemToMap(a, toMap)
+}
+
+func (a *Alpha) PullFromMap(fromMap map[string]interface{}) error {
+	return convert.PullItemFromMap(a, fromMap)
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 type Bravo struct {
 	Finished   bool
@@ -62,64 +77,10 @@ func (b *Bravo) declaim() string {
 	return fmt.Sprintf("%sfinished after %d iterations", finished, b.Iterations)
 }
 
-//////////////////////////////////////////////////////////////////////////
-// Configure RegistryItem methods in a way that allows behavior to be defined in test scripts.
-
-var CopyMapFromItemFn func(toMap map[string]interface{}, fromItem interface{}) error
-var CopyItemFromMapFn func(toItem interface{}, fromMap map[string]interface{}) error
-
-var errCopyFnMissing = fmt.Errorf("no copy function")
-
-func (a *Alpha) PushToMap(toMap map[string]interface{}) error {
-	if CopyMapFromItemFn == nil {
-		return errCopyFnMissing
-	}
-
-	return CopyMapFromItemFn(toMap, a)
-}
-
-func (a *Alpha) PullFromMap(fromMap map[string]interface{}) error {
-	if CopyItemFromMapFn == nil {
-		return errCopyFnMissing
-	}
-
-	return CopyItemFromMapFn(a, fromMap)
-}
-
 func (b *Bravo) PushToMap(toMap map[string]interface{}) error {
-	if CopyMapFromItemFn == nil {
-		return errCopyFnMissing
-	}
-
-	return CopyMapFromItemFn(toMap, b)
+	return convert.PushItemToMap(b, toMap)
 }
 
 func (b *Bravo) PullFromMap(fromMap map[string]interface{}) error {
-	if CopyItemFromMapFn == nil {
-		return errCopyFnMissing
-	}
-
-	return CopyItemFromMapFn(b, fromMap)
-}
-
-// CopyMapFromItemJSON is a default copy mechanism for testing.
-func CopyMapFromItemJSON(toMap map[string]interface{}, fromItem interface{}) error {
-	if bytes, err := json.Marshal(fromItem); err != nil {
-		return fmt.Errorf("marshaling from %v: %w", fromItem, err)
-	} else if err = json.Unmarshal(bytes, &toMap); err != nil {
-		return fmt.Errorf("unmarshaling to %v: %w", toMap, err)
-	}
-
-	return nil
-}
-
-// CopyItemFromMapJSON is a default copy mechanism for testing.
-func CopyItemFromMapJSON(toItem interface{}, fromMap map[string]interface{}) error {
-	if bytes, err := json.Marshal(fromMap); err != nil {
-		return fmt.Errorf("marshaling from %v: %w", fromMap, err)
-	} else if err = json.Unmarshal(bytes, toItem); err != nil {
-		return fmt.Errorf("unmarshaling to %v: %w", toItem, err)
-	}
-
-	return nil
+	return convert.PullItemFromMap(b, fromMap)
 }

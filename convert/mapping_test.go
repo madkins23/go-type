@@ -1,4 +1,4 @@
-package reg
+package convert
 
 import (
 	"testing"
@@ -14,11 +14,11 @@ type Person struct {
 }
 
 func (p *Person) PushToMap(toMap map[string]interface{}) error {
-	return PushMappableToMap(p, toMap)
+	return PushItemToMap(p, toMap)
 }
 
 func (p *Person) PullFromMap(fromMap map[string]interface{}) error {
-	return PullMappableFromMap(p, fromMap)
+	return PullItemFromMap(p, fromMap)
 }
 
 const age = 23

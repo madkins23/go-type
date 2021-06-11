@@ -2,7 +2,7 @@ package reg
 
 import "fmt"
 
-// Type Alias provides a package-specific alias and Registry combination.
+// Alias provides a package-specific alias and Registry combination.
 // This simplifies registration of types in a package with a common alias.
 type Alias struct {
 	Registry

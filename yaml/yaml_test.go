@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/madkins23/go-type/serial"
+
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 
@@ -17,36 +19,32 @@ import (
 
 type YamlTestSuite struct {
 	suite.Suite
-	film *filmYaml
+	film     *filmYaml
+	registry reg.Registry
+	mapper   serial.Mapper
 }
 
-var testRegistryYaml = reg.NewRegistry()
-
-func init() {
-	if err := testRegistryYaml.Alias("test", test.Alpha{}); err != nil {
-		fmt.Printf("*** Error creating test alias: %s\n", err)
-	}
-	if err := testRegistryYaml.Alias("testYAML", filmYaml{}); err != nil {
-		fmt.Printf("*** Error creating test YAML alias: %s\n", err)
-	}
-	if err := testRegistryYaml.Register(&filmYaml{}); err != nil {
-		fmt.Printf("*** Error registering alpha: %s\n", err)
-	}
-	if err := testRegistryYaml.Register(&test.Alpha{}); err != nil {
-		fmt.Printf("*** Error registering alpha: %s\n", err)
-	}
-	if err := testRegistryYaml.Register(&test.Bravo{}); err != nil {
-		fmt.Printf("*** Error registering bravo: %s\n", err)
-	}
+func (suite *YamlTestSuite) SetupSuite() {
+	var err error
+	suite.registry = reg.NewRegistry()
+	suite.Assert().NotNil(suite.registry)
+	suite.mapper, err = serial.NewMapper(suite.registry)
+	suite.Assert().NoError(err)
+	suite.Assert().NotNil(suite.mapper)
+	suite.Assert().NoError(suite.registry.Alias("test", test.Alpha{}), "creating test alias")
+	suite.Assert().NoError(suite.registry.Alias("testYAML", &filmYaml{}), "creating testYAML alias")
+	suite.Assert().NoError(suite.registry.Register(&filmYaml{}))
+	suite.Assert().NoError(suite.registry.Register(&test.Alpha{}))
+	suite.Assert().NoError(suite.registry.Register(&test.Bravo{}))
 }
 
 func (suite *YamlTestSuite) SetupTest() {
-	test.CopyMapFromItemFn = func(toMap map[string]interface{}, fromItem interface{}) error {
-		return copyViaYaml(toMap, fromItem)
-	}
-	test.CopyItemFromMapFn = func(toItem interface{}, fromMap map[string]interface{}) error {
-		return copyViaYaml(toItem, fromMap)
-	}
+	//test.CopyMapFromItemFn = func(toMap map[string]interface{}, fromItem interface{}) error {
+	//	return copyViaYaml(toMap, fromItem)
+	//}
+	//test.CopyItemFromMapFn = func(toItem interface{}, fromMap map[string]interface{}) error {
+	//	return copyViaYaml(toItem, fromMap)
+	//}
 
 	suite.film = &filmYaml{Name: "Test YAML", Index: make(map[string]test.Actor)}
 	suite.film.Lead = &test.Alpha{Name: "Goober", Percent: 13.23}
@@ -62,30 +60,29 @@ func TestYamlSuite(t *testing.T) {
 
 //////////////////////////////////////////////////////////////////////////
 
-func (suite *YamlTestSuite) TestYamlBaseIsRegistry() {
-	var yReg reg.Registry = &YamlBase{}
-	_, ok := yReg.(reg.Registry)
+func (suite *YamlTestSuite) TestConverterIsRegistry() {
+	var conv interface{}
+	var err error
+	conv, err = NewConverter(suite.mapper)
+	suite.Assert().NoError(err)
+	_, ok := conv.(serial.Mapper)
 	suite.Assert().True(ok)
 }
 
-func (suite *YamlTestSuite) TestGetTypeNameAndReset() {
+func (suite *YamlTestSuite) TestGetTypeName() {
 	reader := strings.NewReader(simpleYaml)
 	suite.Assert().NotNil(reader)
 
 	// Get type name.
-	name, err := getYamlTypeNameAndReset(reader)
+	name, err := getYamlTypeName(reader)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal("[testYAML]filmYaml", name)
-
-	// Check for reset.
-	bytes, err := ioutil.ReadAll(reader)
-	suite.Assert().NoError(err)
-	suite.Assert().Equal(simpleYaml, string(bytes))
 }
 
 //////////////////////////////////////////////////////////////////////////
 
 type filmYaml struct {
+	serial.WithMapper
 	yaml.Marshaler
 	yaml.Unmarshaler
 
@@ -101,10 +98,6 @@ func (film *filmYaml) addActor(name string, act test.Actor) {
 }
 
 func (film *filmYaml) PullFromMap(fromMap map[string]interface{}) error {
-	if name, found := fromMap["name"].(string); found {
-		film.Name = name
-	}
-
 	var ok bool
 	if fromMap["name"] != nil {
 		if film.Name, ok = fromMap["name"].(string); !ok {
@@ -151,10 +144,12 @@ func (film *filmYaml) PullFromMap(fromMap map[string]interface{}) error {
 func (film *filmYaml) pullActorFromMap(from interface{}) (test.Actor, error) {
 	if fromMap, ok := from.(map[string]interface{}); !ok {
 		return nil, fmt.Errorf("from is not a map")
-	} else if actItem, err := testRegistryYaml.CreateItemFromMap(fromMap); err != nil {
+	} else if mapper := film.Mapper(); mapper == nil {
+		return nil, fmt.Errorf("no mapper on filmYaml")
+	} else if actItem, err := mapper.CreateItemFromMap(fromMap); err != nil {
 		return nil, fmt.Errorf("create actor from map: %w", err)
 	} else if act, ok := actItem.(test.Actor); !ok {
-		return nil, fmt.Errorf("map is not an actor")
+		return nil, fmt.Errorf("created item is not an actor")
 	} else {
 		return act, nil
 	}
@@ -162,19 +157,16 @@ func (film *filmYaml) pullActorFromMap(from interface{}) (test.Actor, error) {
 
 func (film *filmYaml) PushToMap(toMap map[string]interface{}) error {
 	var err error
-	if toMap[reg.TypeField], err = testRegistryYaml.NameFor(film); err != nil {
-		return fmt.Errorf("get type name: %w", err)
-	}
 
 	toMap["name"] = film.Name
 
-	if toMap["lead"], err = testRegistryYaml.ConvertItemToMap(film.Lead); err != nil {
+	if toMap["lead"], err = film.Mapper().ConvertItemToMap(film.Lead); err != nil {
 		return fmt.Errorf("converting lead to map: %w", err)
 	}
 
 	cast := make([]interface{}, len(film.Cast))
 	for i, member := range film.Cast {
-		if cast[i], err = testRegistryYaml.ConvertItemToMap(member); err != nil {
+		if cast[i], err = film.Mapper().ConvertItemToMap(member); err != nil {
 			return fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
@@ -182,7 +174,7 @@ func (film *filmYaml) PushToMap(toMap map[string]interface{}) error {
 
 	index := make(map[string]interface{}, len(film.Index))
 	for key, member := range film.Index {
-		if index[key], err = testRegistryYaml.ConvertItemToMap(member); err != nil {
+		if index[key], err = film.Mapper().ConvertItemToMap(member); err != nil {
 			return fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
@@ -221,25 +213,17 @@ func (film *filmYaml) UnmarshalYAML(value *yaml.Node) error {
 
 //////////////////////////////////////////////////////////////////////////
 
-func copyViaYaml(dest, src interface{}) error {
-	if bytes, err := yaml.Marshal(src); err != nil {
-		return fmt.Errorf("marshaling from %v: %w", src, err)
-	} else if err = yaml.Unmarshal(bytes, dest); err != nil {
-		return fmt.Errorf("unmarshaling to %v: %w", dest, err)
-	}
-
-	return nil
-}
-
-//////////////////////////////////////////////////////////////////////////
-
 func (suite *YamlTestSuite) TestMarshalCycle() {
+	suite.film.Open(suite.mapper)
+	defer suite.film.Close()
+
 	bytes, err := yaml.Marshal(suite.film)
 	suite.Assert().NoError(err)
 
 	fmt.Print("--- TestMarshalCycle ---------------\n", string(bytes), "------------------------------------\n")
 
 	var film filmYaml
+	film.Open(suite.mapper)
 	suite.Assert().NoError(yaml.Unmarshal(bytes, &film))
 	suite.Assert().NotEqual(suite.film, &film) // fails due to unexported field 'extra'
 	for _, act := range suite.film.Cast {
@@ -254,7 +238,7 @@ func (suite *YamlTestSuite) TestMarshalCycle() {
 }
 
 func (suite *YamlTestSuite) TestLoadFromString() {
-	base := NewYamlBase(testRegistryYaml)
+	base, _ := NewConverter(suite.mapper)
 	loaded, err := base.LoadFromString(simpleYaml)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(loaded)
@@ -274,7 +258,7 @@ func (suite *YamlTestSuite) TestLoadFromString() {
 }
 
 func (suite *YamlTestSuite) TestMarshalFileCycle() {
-	base := NewYamlBase(testRegistryYaml)
+	marshal, _ := NewConverter(suite.mapper)
 	file, err := ioutil.TempFile("", "*.test.yaml")
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(file)
@@ -283,23 +267,24 @@ func (suite *YamlTestSuite) TestMarshalFileCycle() {
 	suite.Assert().NoError(file.Close())
 
 	film := suite.makeTestFilm()
-	suite.Assert().NoError(base.SaveToFile(film, fileName))
+	suite.Assert().NoError(marshal.SaveToFile(film, fileName))
 
-	reloaded, err := base.LoadFromFile(fileName)
+	reloaded, err := marshal.LoadFromFile(fileName)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(reloaded)
 	suite.Assert().Equal(film, reloaded)
 }
+
 func (suite *YamlTestSuite) TestMarshalStringCycle() {
-	base := NewYamlBase(testRegistryYaml)
+	marshal, _ := NewConverter(suite.mapper)
 	film := suite.makeTestFilm()
-	str, err := base.SaveToString(film)
+	str, err := marshal.SaveToString(film)
 	suite.Assert().NoError(err)
 	suite.NotZero(str)
 
 	fmt.Print("--- TestMarshalStringCycle ---------\n", str, "------------------------------------\n")
 
-	reloaded, err := base.LoadFromString(str)
+	reloaded, err := marshal.LoadFromString(str)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(reloaded)
 	suite.Assert().Equal(film, reloaded)
@@ -313,14 +298,14 @@ name:   'Blockbuster Movie'
 lead: {
   <type>: '[test]Alpha',
   name: 'Lance Lucky',
-  percentDone: 23.79,
+  percent: 23.79,
   extra: 'Yaaaa!'
 }
 cast:
 - {
     <type>: '[test]Alpha',
     name: 'Lance Lucky',
-    percentDone: 23.79,
+    percent: 23.79,
     extra: false
   }
 - {
@@ -333,7 +318,7 @@ index: {
   'Lucky, Lance': {
     <type>: '[test]Alpha',
     name: 'Lance Lucky',
-    percentDone: 23.79,
+    percent: 23.79,
     extra: 'marshmallow stars'
   },
   'Queue, Susie': {
