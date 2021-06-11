@@ -9,10 +9,10 @@ import (
 const (
 	// TypeField is the name of the "type" field in serialized structs.
 	// This field name appears to be legal in JSON, YAML, and BSON (MongoDB).
-	TypeField        = "<type>"
+	TypeField = "<type>"
 
 	// TypeFieldEscaped is an alternate "type" field escaped for use in a regular expression.
-	// This may be the same as TypeField if there are no regular expression characters.
+	// This is currently the same as TypeField since there are no regular expression characters.
 	TypeFieldEscaped = TypeField
 )
 
@@ -34,15 +34,6 @@ type Registry interface {
 	GenNames(item interface{}, aliased bool) (string, []string, error)
 	ConvertItemToMap(item interface{}) (map[string]interface{}, error)
 	CreateItemFromMap(in map[string]interface{}) (interface{}, error)
-}
-
-// RegistryItem contains methods for marshaling fields to and from from a map.
-// A Registry will work with any kind of struct, but won't copy field data without this interface.
-// This is used by ConvertItemToMap and CreateItemFromMap (as called from marshal/unmarshal code).
-// Note that both methods must be provided for either to work.
-type RegistryItem interface {
-	PushToMap(toMap map[string]interface{}) error
-	PullFromMap(fromMap map[string]interface{}) error
 }
 
 // NewRegistry creates a new Registry object of the default internal type.
@@ -231,8 +222,10 @@ func (reg *registry) Make(name string) (interface{}, error) {
 	return reflect.New(item.typeObj).Interface(), nil
 }
 
-// ConvertItemToMap converts a registry typed item into a map for further processing.
-// If the item is not of a Registry type an error is returned.
+// ConvertItemToMap converts an item of a registered type into a map for further processing.
+// The registered type name will be put into the map in a special field named by TypeField.
+// An error is returned if the type of the item is not registered.
+// If the item implements Mappable then its PushToMap method is called to populate the map.
 func (reg *registry) ConvertItemToMap(item interface{}) (map[string]interface{}, error) {
 	value := reflect.ValueOf(item)
 	if value.Kind() == reflect.Ptr {
@@ -243,7 +236,7 @@ func (reg *registry) ConvertItemToMap(item interface{}) (map[string]interface{},
 	}
 
 	itemType := value.Type()
-	registration, ok := reg.byType[itemType]
+	registered, ok := reg.byType[itemType]
 	if !ok {
 		return nil, fmt.Errorf("no registration for type %s", itemType)
 	}
@@ -252,10 +245,10 @@ func (reg *registry) ConvertItemToMap(item interface{}) (map[string]interface{},
 
 	// Add the special marker for the type of the object.
 	// This should work with both JSON and YAML.
-	result[TypeField] = registration.defaultName
+	result[TypeField] = registered.defaultName
 
-	if mapper, ok := item.(RegistryItem); ok {
-		if err := mapper.PushToMap(result); err != nil {
+	if regItem, ok := item.(Mappable); ok {
+		if err := regItem.PushToMap(result); err != nil {
 			return nil, fmt.Errorf("pushing item fields to map: %w", err)
 		}
 	}
@@ -264,7 +257,9 @@ func (reg *registry) ConvertItemToMap(item interface{}) (map[string]interface{},
 }
 
 // CreateItemFromMap attempts to return a new item of the type specified in the map.
-// An error is returned if this is impossible.
+// The registered type name is acquired from a special field named by TypeField in the map.
+// An error is returned if this field does not exist or is not registered.
+// If the item implements Mappable then its PullFromMap method is called to populate the map.
 func (reg *registry) CreateItemFromMap(in map[string]interface{}) (interface{}, error) {
 	typeField, found := in[TypeField]
 	if !found {
@@ -280,7 +275,7 @@ func (reg *registry) CreateItemFromMap(in map[string]interface{}) (interface{}, 
 		return nil, fmt.Errorf("making item of type %s: %w", typeField, err)
 	}
 
-	if mapper, ok := item.(RegistryItem); ok {
+	if mapper, ok := item.(Mappable); ok {
 		if err := mapper.PullFromMap(in); err != nil {
 			return nil, fmt.Errorf("pulling item fields from map: %w", err)
 		}
