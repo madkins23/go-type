@@ -29,8 +29,14 @@ type ToMapFn func(from interface{}, to map[string]interface{}) error
 // A type registry tracks specific types by name, a facility not native to Go.
 // A type name in the registry is made up of package path and local type name.
 // Aliases may be specified to shorten the path to manageable lengths.
+//
+// A single "global" Registry is predefined and is accessible via
+// functions of the same names as the methods on the Registry interface.
+//
+// Non-global Registry objects can be generated for specific purposes.
+// Using these separate Registry objects is at the user's risk.
 type Registry interface {
-	Alias(alias string, example interface{}) error
+	AddAlias(alias string, example interface{}) error
 	Register(example interface{}) error
 	Make(name string) (interface{}, error)
 	NameFor(item interface{}) (string, error)
@@ -80,10 +86,10 @@ type registration struct {
 
 //////////////////////////////////////////////////////////////////////////
 
-// Alias creates an alias to be used to shorten names.
+// AddAlias creates an alias to be used to shorten names.
 // The alias must exist prior to registering applicable types.
 // Redefining a pre-existing alias is an error.
-func (reg *registry) Alias(alias string, example interface{}) error {
+func (reg *registry) AddAlias(alias string, example interface{}) error {
 	if _, ok := reg.aliases[alias]; ok {
 		return fmt.Errorf("can't redefine alias %s", alias)
 	}

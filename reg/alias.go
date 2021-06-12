@@ -1,13 +1,17 @@
 package reg
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
-// Alias provides a package-specific alias and Registry combination.
+// AddAlias provides a package-specific alias and Registry combination.
 // This simplifies registration of types in a package with a common alias.
 type Alias struct {
 	Registry
-	alias   string
-	aliased bool
+	alias    string
+	aliased  bool
+	updating sync.Mutex
 }
 
 // NewAlias returns a package-specific Registry with the given alias.
@@ -27,10 +31,14 @@ func NewAlias(alias string, registry Registry) *Alias {
 // Actual registration passed along to package registry object.
 func (a *Alias) Register(example interface{}) error {
 	if !a.aliased {
-		if err := a.Alias(a.alias, example); err != nil {
-			return fmt.Errorf("register alias: %w", err)
+		a.updating.Lock()
+		if !a.aliased {
+			if err := a.AddAlias(a.alias, example); err != nil {
+				return fmt.Errorf("register alias: %w", err)
+			}
+			a.aliased = true
 		}
-		a.aliased = true
+		a.updating.Unlock()
 	}
 
 	if err := a.Registry.Register(example); err != nil {

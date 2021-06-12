@@ -29,7 +29,7 @@ func (suite *JsonTestSuite) SetupSuite() {
 	suite.mapper, err = serial.NewMapper(suite.registry)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(suite.mapper)
-	suite.Assert().NoError(suite.registry.Alias("test", test.Alpha{}), "creating test alias")
+	suite.Assert().NoError(suite.registry.AddAlias("test", test.Alpha{}), "creating test alias")
 	suite.Assert().NoError(suite.registry.Register(&test.Alpha{}))
 	suite.Assert().NoError(suite.registry.Register(&test.Bravo{}))
 }

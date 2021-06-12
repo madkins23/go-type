@@ -18,7 +18,7 @@ import (
 
 func ExampleRegistry_Alias() {
 	registry := NewRegistry()
-	if registry.Alias("[alpha]", &test.Alpha{}) == nil {
+	if registry.AddAlias("[alpha]", &test.Alpha{}) == nil {
 		fmt.Println("Aliased")
 	}
 	// output: Aliased
@@ -61,14 +61,14 @@ func (suite *registryTestSuite) TestNewRegistry() {
 
 func (suite *registryTestSuite) TestAlias() {
 	example := &test.Alpha{}
-	err := suite.registry.Alias("badPackage", &example)
+	err := suite.registry.AddAlias("badPackage", &example)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "no package path")
 	suite.Assert().Empty(suite.reg.aliases)
-	err = suite.registry.Alias("x", example)
+	err = suite.registry.AddAlias("x", example)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(suite.reg.aliases, 1)
-	err = suite.registry.Alias("x", example)
+	err = suite.registry.AddAlias("x", example)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "can't redefine alias")
 }
@@ -123,7 +123,7 @@ func (suite *registryTestSuite) TestCycleSimple() {
 
 func (suite *registryTestSuite) TestCycleAlias() {
 	example := &test.Alpha{}
-	suite.Assert().NoError(suite.registry.Alias("typeUtils", example))
+	suite.Assert().NoError(suite.registry.AddAlias("typeUtils", example))
 	suite.Assert().NoError(suite.registry.Register(example))
 	exType := reflect.TypeOf(example)
 	if exType.Kind() == reflect.Ptr {
@@ -155,7 +155,7 @@ func (suite *registryTestSuite) TestGenNames() {
 	suite.Assert().NotNil(aliases)
 	suite.Assert().Empty(aliases)
 
-	suite.Assert().NoError(suite.registry.Alias("typeUtils", example))
+	suite.Assert().NoError(suite.registry.AddAlias("typeUtils", example))
 	name, aliases, err = suite.reg.genNames(example, false)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(test.PackageName+"/Alpha", name)

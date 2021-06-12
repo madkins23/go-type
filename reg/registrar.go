@@ -21,10 +21,10 @@ type registrar struct {
 
 // Alias creates an alias to be used to shorten names.
 // Use an empty string to remove a previous alias.
-func (reg *registrar) Alias(alias string, example interface{}) error {
+func (reg *registrar) AddAlias(alias string, example interface{}) error {
 	reg.lock.Lock()
 	defer reg.lock.Unlock()
-	return reg.Registry.Alias(alias, example)
+	return reg.Registry.AddAlias(alias, example)
 }
 
 // Register a type by providing an example object.
