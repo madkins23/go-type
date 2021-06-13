@@ -28,7 +28,6 @@ func (tp *TestProduct) Marshal() (map[string]interface{}, error) {
 }
 
 func (tp *TestProduct) Unmarshal(fromMap map[string]interface{}) error {
-	// TODO: Not sure how to Unmarshal _into_ tp?!?
 	return datamap.Unmarshal(fromMap, tp)
 }
 

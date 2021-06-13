@@ -91,9 +91,12 @@ Registration is done via a `reg.Registry` object.
 This object stores information about a type by its full name.
 Create a new object using `reg.NewRegistry()`.
 
-The basic registry object is not safe for concurrent access.
+The basic registry object is not guaranteed safe for concurrent access.
 Since the type registration should be done at application startup
 and subsequent access will be read-only to underlying `map` objects
 this is probably sufficient for most usage.
 If not, use `reg.NewRegistrar()` to create a Registry object that
 uses mutex locks.
+
+A single global `reg.Registry` object is provided via the `reg.Highlander()` function.
+In the general case this will be sufficient for all use.

@@ -56,13 +56,11 @@ func TestMapperBase_Unmarshal(t *testing.T) {
 	var result Person
 	err := result.Unmarshal(mapped)
 	assert.NoError(t, err)
-	//fmt.Printf("Pulled: %#v\n  from: %#v\n", result, mapped)
 	assert.Equal(t, structured, result)
 }
 
 func TestMapperBase_Marshal(t *testing.T) {
 	result, err := structured.Marshal()
 	assert.NoError(t, err)
-	//fmt.Printf("Pushed: %#v\n    to: %#v\n", structured, result)
 	assert.Equal(t, mapped, result)
 }
