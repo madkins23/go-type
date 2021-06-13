@@ -64,11 +64,6 @@ func (conv *Converter) loadFromReadSeeker(reader io.ReadSeeker) (interface{}, er
 	} else if item, err := conv.Make(typeName); err != nil {
 		return nil, fmt.Errorf("make item of type %s: %w", typeName, err)
 	} else {
-		if recursive, isRecursive := item.(serial.Recursive); isRecursive && recursive != nil {
-			recursive.Open(conv.Mapper)
-			defer recursive.Close()
-		}
-
 		if err = yaml.NewDecoder(reader).Decode(item); err != nil {
 			return nil, fmt.Errorf("unmarshal %s: %w", typeName, err)
 		} else {
@@ -91,11 +86,6 @@ func (conv *Converter) SaveToFile(item interface{}, fileName string) (finalErr e
 		}
 	}()
 
-	if recursive, isRecursive := item.(serial.Recursive); isRecursive && recursive != nil {
-		recursive.Open(conv.Mapper)
-		defer recursive.Close()
-	}
-
 	if converted, err := conv.Marshal(item); err != nil {
 		return fmt.Errorf("convert item to map %w", err)
 	} else if err = yaml.NewEncoder(file).Encode(converted); err != nil {
@@ -108,11 +98,6 @@ func (conv *Converter) SaveToFile(item interface{}, fileName string) (finalErr e
 // SaveToString marshals an item of a registered type to a YAML string.
 func (conv *Converter) SaveToString(item interface{}) (string, error) {
 	builder := &strings.Builder{}
-
-	if recursive, isRecursive := item.(serial.Recursive); isRecursive && recursive != nil {
-		recursive.Open(conv.Mapper)
-		defer recursive.Close()
-	}
 
 	if converted, err := conv.Marshal(item); err != nil {
 		return "", fmt.Errorf("convert item to map %w", err)

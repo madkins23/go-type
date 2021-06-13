@@ -13,12 +13,12 @@ type Mapper interface {
 	Unmarshal(data map[string]interface{}) (interface{}, error)
 }
 
-func NewMapper(registry reg.Registry) (Mapper, error) {
+func NewMapper(registry reg.Registry) Mapper {
 	if registry == nil {
-		return nil, reg.ErrNilRegistry
+		registry = reg.Highlander()
 	}
 
-	return &mapper{Registry: registry}, nil
+	return &mapper{Registry: registry}
 }
 
 // Mappable defines methods for marshaling an object to/from from a map.

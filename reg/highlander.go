@@ -4,6 +4,10 @@ package reg
 
 var theOne Registry = NewRegistry()
 
+func Highlander() Registry {
+	return theOne
+}
+
 func AddAlias(alias string, example interface{}) error {
 	return theOne.AddAlias(alias, example)
 }

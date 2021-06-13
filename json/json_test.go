@@ -19,19 +19,21 @@ type JsonTestSuite struct {
 	suite.Suite
 	film     *filmJson
 	registry reg.Registry
-	mapper   serial.Mapper
 }
 
+// testMapper must be global to be accessible from filmJSON.
+// Normally this would be provided by serial.Highlander(),
+// but for testing purposes create it globally so it uses the local Registry object.
+var testMapper serial.Mapper
+
 func (suite *JsonTestSuite) SetupSuite() {
-	var err error
 	suite.registry = reg.NewRegistry()
 	suite.Assert().NotNil(suite.registry)
-	suite.mapper, err = serial.NewMapper(suite.registry)
-	suite.Assert().NoError(err)
-	suite.Assert().NotNil(suite.mapper)
 	suite.Assert().NoError(suite.registry.AddAlias("test", test.Alpha{}), "creating test alias")
 	suite.Assert().NoError(suite.registry.Register(&test.Alpha{}))
 	suite.Assert().NoError(suite.registry.Register(&test.Bravo{}))
+	testMapper = serial.NewMapper(suite.registry)
+	suite.Assert().NotNil(testMapper)
 }
 
 func (suite *JsonTestSuite) SetupTest() {
@@ -50,9 +52,8 @@ func TestJsonSuite(t *testing.T) {
 //////////////////////////////////////////////////////////////////////////
 
 type filmJson struct {
-	serial.WithMapper
-	json.Marshaler
-	json.Unmarshaler
+	//json.Marshaler
+	//json.Unmarshaler
 
 	Name  string
 	Lead  test.Actor
@@ -72,6 +73,8 @@ func (film *filmJson) addActor(name string, act test.Actor) {
 	film.Index[name] = act
 }
 
+// MarshalJSON is called to marshal the filmJson object properly.
+// It is necessary filmJson contains some interface fields that must be populated.
 func (film *filmJson) MarshalJSON() ([]byte, error) {
 	var err error
 
@@ -79,20 +82,20 @@ func (film *filmJson) MarshalJSON() ([]byte, error) {
 		Name: film.Name,
 	}
 
-	if convert.Lead, err = film.Mapper().Marshal(film.Lead); err != nil {
+	if convert.Lead, err = testMapper.Marshal(film.Lead); err != nil {
 		return nil, fmt.Errorf("converting lead to map: %w", err)
 	}
 
 	convert.Cast = make([]interface{}, len(film.Cast))
 	for i, member := range film.Cast {
-		if convert.Cast[i], err = film.Mapper().Marshal(member); err != nil {
+		if convert.Cast[i], err = testMapper.Marshal(member); err != nil {
 			return nil, fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
 
 	convert.Index = make(map[string]interface{}, len(film.Index))
 	for key, member := range film.Index {
-		if convert.Index[key], err = film.Mapper().Marshal(member); err != nil {
+		if convert.Index[key], err = testMapper.Marshal(member); err != nil {
 			return nil, fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
@@ -135,35 +138,13 @@ func (film *filmJson) unmarshalActor(input interface{}) (test.Actor, error) {
 	actMap, ok := input.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("actor input should be map")
-	} else if mapper := film.Mapper(); mapper == nil {
-		return nil, fmt.Errorf("no mapper on filmJson")
-	} else if item, err := mapper.Unmarshal(actMap); err != nil {
+	} else if item, err := testMapper.Unmarshal(actMap); err != nil {
 		return nil, fmt.Errorf("creating item from map: %w", err)
 	} else if act, ok := item.(test.Actor); !ok {
 		return nil, fmt.Errorf("item is not an actor")
 	} else {
 		return act, nil
 	}
-}
-
-func copyItemToMap(toMap map[string]interface{}, fromItem interface{}) error {
-	if bytes, err := json.Marshal(fromItem); err != nil {
-		return fmt.Errorf("marshaling from %v: %w", fromItem, err)
-	} else if err = json.Unmarshal(bytes, &toMap); err != nil {
-		return fmt.Errorf("unmarshaling to %v: %w", toMap, err)
-	}
-
-	return nil
-}
-
-func copyMapToItem(toItem interface{}, fromMap map[string]interface{}) error {
-	if bytes, err := json.Marshal(fromMap); err != nil {
-		return fmt.Errorf("marshaling from %v: %w", fromMap, err)
-	} else if err = json.Unmarshal(bytes, toItem); err != nil {
-		return fmt.Errorf("unmarshaling to %v: %w", toItem, err)
-	}
-
-	return nil
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -184,18 +165,12 @@ func (suite *JsonTestSuite) TestExample() {
 }
 
 func (suite *JsonTestSuite) TestCycle() {
-	suite.film.Open(suite.mapper)
-	defer suite.film.Close()
-
 	bytes, err := json.Marshal(suite.film)
 	suite.Assert().NoError(err)
 
-	//fmt.Printf(">>> marshaled:\n%s\n", string(bytes))
+	//fmt.Printf(">>> marshaled:\n%#v\n", string(bytes))
 
 	var film filmJson
-	film.Open(suite.mapper)
-	defer film.Close()
-
 	suite.Assert().NoError(json.Unmarshal(bytes, &film))
 	suite.Assert().NotEqual(suite.film, &film) // fails due to unexported field 'extra'
 	for _, act := range suite.film.Cast {

@@ -50,9 +50,7 @@ func (suite *mapperTestSuite) SetupSuite() {
 
 func (suite *mapperTestSuite) SetupTest() {
 	suite.registry = reg.NewRegistry()
-	var err error
-	suite.mapper, err = NewMapper(suite.registry)
-	suite.Assert().NoError(err)
+	suite.mapper = NewMapper(suite.registry)
 }
 
 func TestMapperSuite(t *testing.T) {

@@ -16,7 +16,7 @@ import (
 
 //////////////////////////////////////////////////////////////////////////
 
-func ExampleRegistry_Alias() {
+func ExampleRegistry_AddAlias() {
 	registry := NewRegistry()
 	if registry.AddAlias("[alpha]", &test.Alpha{}) == nil {
 		fmt.Println("Aliased")
