@@ -3,7 +3,6 @@ package yaml
 import (
 	"fmt"
 	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -62,6 +61,7 @@ func (suite *YamlTestSuite) TestConverterIsRegistry() {
 	suite.Assert().True(ok)
 }
 
+/*
 func (suite *YamlTestSuite) TestGetTypeName() {
 	reader := strings.NewReader(simpleYaml)
 	suite.Assert().NotNil(reader)
@@ -71,6 +71,7 @@ func (suite *YamlTestSuite) TestGetTypeName() {
 	suite.Assert().NoError(err)
 	suite.Assert().Equal("[testYAML]filmYaml", name)
 }
+*/
 
 //////////////////////////////////////////////////////////////////////////
 
