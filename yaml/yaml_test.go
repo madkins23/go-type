@@ -6,12 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/madkins23/go-type/serial"
-
 	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 
 	"github.com/madkins23/go-type/reg"
+	"github.com/madkins23/go-type/serial"
 	"github.com/madkins23/go-type/test"
 )
 
@@ -39,13 +38,6 @@ func (suite *YamlTestSuite) SetupSuite() {
 }
 
 func (suite *YamlTestSuite) SetupTest() {
-	//test.CopyMapFromItemFn = func(toMap map[string]interface{}, fromItem interface{}) error {
-	//	return copyViaYaml(toMap, fromItem)
-	//}
-	//test.CopyItemFromMapFn = func(toItem interface{}, fromMap map[string]interface{}) error {
-	//	return copyViaYaml(toItem, fromMap)
-	//}
-
 	suite.film = &filmYaml{Name: "Test YAML", Index: make(map[string]test.Actor)}
 	suite.film.Lead = &test.Alpha{Name: "Goober", Percent: 13.23}
 	suite.film.addActor("Goober", suite.film.Lead)
@@ -146,7 +138,7 @@ func (film *filmYaml) pullActorFromMap(from interface{}) (test.Actor, error) {
 		return nil, fmt.Errorf("from is not a map")
 	} else if mapper := film.Mapper(); mapper == nil {
 		return nil, fmt.Errorf("no mapper on filmYaml")
-	} else if actItem, err := mapper.CreateItemFromMap(fromMap); err != nil {
+	} else if actItem, err := mapper.Unmarshal(fromMap); err != nil {
 		return nil, fmt.Errorf("create actor from map: %w", err)
 	} else if act, ok := actItem.(test.Actor); !ok {
 		return nil, fmt.Errorf("created item is not an actor")
@@ -160,13 +152,13 @@ func (film *filmYaml) PushToMap(toMap map[string]interface{}) error {
 
 	toMap["name"] = film.Name
 
-	if toMap["lead"], err = film.Mapper().ConvertItemToMap(film.Lead); err != nil {
+	if toMap["lead"], err = film.Mapper().Marshal(film.Lead); err != nil {
 		return fmt.Errorf("converting lead to map: %w", err)
 	}
 
 	cast := make([]interface{}, len(film.Cast))
 	for i, member := range film.Cast {
-		if cast[i], err = film.Mapper().ConvertItemToMap(member); err != nil {
+		if cast[i], err = film.Mapper().Marshal(member); err != nil {
 			return fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
@@ -174,7 +166,7 @@ func (film *filmYaml) PushToMap(toMap map[string]interface{}) error {
 
 	index := make(map[string]interface{}, len(film.Index))
 	for key, member := range film.Index {
-		if index[key], err = film.Mapper().ConvertItemToMap(member); err != nil {
+		if index[key], err = film.Mapper().Marshal(member); err != nil {
 			return fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}

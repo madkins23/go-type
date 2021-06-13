@@ -5,8 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/madkins23/go-type/convert"
-
+	"github.com/madkins23/go-type/datamap"
 	"github.com/madkins23/go-type/reg"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,12 +23,13 @@ type TestProduct struct {
 	extra string
 }
 
-func (tp *TestProduct) PushToMap(toMap map[string]interface{}) error {
-	return convert.PushItemToMap(tp, toMap)
+func (tp *TestProduct) Marshal() (map[string]interface{}, error) {
+	return datamap.Marshal(tp)
 }
 
-func (tp *TestProduct) PullFromMap(fromMap map[string]interface{}) error {
-	return convert.PullItemFromMap(tp, fromMap)
+func (tp *TestProduct) Unmarshal(fromMap map[string]interface{}) error {
+	// TODO: Not sure how to Unmarshal _into_ tp?!?
+	return datamap.Unmarshal(fromMap, tp)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -61,9 +61,9 @@ func TestMapperSuite(t *testing.T) {
 
 //////////////////////////////////////////////////////////////////////////
 
-func (suite *mapperTestSuite) TestConvertItemToMap() {
+func (suite *mapperTestSuite) TestMarshal() {
 	suite.Assert().NoError(suite.registry.Register(&TestProduct{}))
-	m, err := suite.mapper.ConvertItemToMap(&TestProduct{Name: prodName, Price: price, extra: "nothing to see here"})
+	m, err := suite.mapper.Marshal(&TestProduct{Name: prodName, Price: price, extra: "nothing to see here"})
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(m)
 	fmt.Printf("toMap: %#v\n", m)
@@ -73,9 +73,9 @@ func (suite *mapperTestSuite) TestConvertItemToMap() {
 	suite.Assert().Equal(price, m["Price"])
 }
 
-func (suite *mapperTestSuite) TestCreateItemFromMap() {
+func (suite *mapperTestSuite) TestUnmarshal() {
 	suite.Assert().NoError(suite.registry.Register(&TestProduct{}))
-	example, err := suite.mapper.CreateItemFromMap(map[string]interface{}{
+	example, err := suite.mapper.Unmarshal(map[string]interface{}{
 		reg.TypeField: suite.packagePath + "/" + structName,
 		"Name":        prodName,
 		"Price":       price,

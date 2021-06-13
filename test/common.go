@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 
-	"github.com/madkins23/go-type/convert"
+	"github.com/madkins23/go-type/datamap"
 )
 
 // PackageName should be set to the known path for this package.
@@ -47,12 +47,12 @@ func (a *Alpha) declaim() string {
 	return fmt.Sprintf("%s is %6.2f%%  complete", a.Name, a.Percent)
 }
 
-func (a *Alpha) PushToMap(toMap map[string]interface{}) error {
-	return convert.PushItemToMap(a, toMap)
+func (a *Alpha) Marshal() (map[string]interface{}, error) {
+	return datamap.Marshal(a)
 }
 
-func (a *Alpha) PullFromMap(fromMap map[string]interface{}) error {
-	return convert.PullItemFromMap(a, fromMap)
+func (a *Alpha) Unmarshal(fromMap map[string]interface{}) error {
+	return datamap.Unmarshal(fromMap, a)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -77,10 +77,10 @@ func (b *Bravo) declaim() string {
 	return fmt.Sprintf("%sfinished after %d iterations", finished, b.Iterations)
 }
 
-func (b *Bravo) PushToMap(toMap map[string]interface{}) error {
-	return convert.PushItemToMap(b, toMap)
+func (b *Bravo) Marshal() (map[string]interface{}, error) {
+	return datamap.Marshal(b)
 }
 
-func (b *Bravo) PullFromMap(fromMap map[string]interface{}) error {
-	return convert.PullItemFromMap(b, fromMap)
+func (b *Bravo) Unmarshal(fromMap map[string]interface{}) error {
+	return datamap.Unmarshal(fromMap, b)
 }

@@ -8,11 +8,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/madkins23/go-type/serial"
-
 	"gopkg.in/yaml.v3"
 
 	"github.com/madkins23/go-type/reg"
+	"github.com/madkins23/go-type/serial"
 )
 
 type Converter struct {
@@ -97,7 +96,7 @@ func (conv *Converter) SaveToFile(item interface{}, fileName string) (finalErr e
 		defer recursive.Close()
 	}
 
-	if converted, err := conv.ConvertItemToMap(item); err != nil {
+	if converted, err := conv.Marshal(item); err != nil {
 		return fmt.Errorf("convert item to map %w", err)
 	} else if err = yaml.NewEncoder(file).Encode(converted); err != nil {
 		return fmt.Errorf("marshal item: %w", err)
@@ -115,7 +114,7 @@ func (conv *Converter) SaveToString(item interface{}) (string, error) {
 		defer recursive.Close()
 	}
 
-	if converted, err := conv.ConvertItemToMap(item); err != nil {
+	if converted, err := conv.Marshal(item); err != nil {
 		return "", fmt.Errorf("convert item to map %w", err)
 	} else if err := yaml.NewEncoder(builder).Encode(converted); err != nil {
 		return "", fmt.Errorf("marshal nexus: %w", err)

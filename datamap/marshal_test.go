@@ -1,4 +1,4 @@
-package convert
+package datamap
 
 import (
 	"testing"
@@ -13,12 +13,12 @@ type Person struct {
 	Extra  map[string]string
 }
 
-func (p *Person) PushToMap(toMap map[string]interface{}) error {
-	return PushItemToMap(p, toMap)
+func (p *Person) Marshal() (map[string]interface{}, error) {
+	return Marshal(p)
 }
 
-func (p *Person) PullFromMap(fromMap map[string]interface{}) error {
-	return PullItemFromMap(p, fromMap)
+func (p *Person) Unmarshal(fromMap map[string]interface{}) error {
+	return Unmarshal(fromMap, p)
 }
 
 const age = 23
@@ -52,17 +52,16 @@ func init() {
 	}
 }
 
-func TestMapperBase_PullFromMap(t *testing.T) {
+func TestMapperBase_Unmarshal(t *testing.T) {
 	var result Person
-	err := result.PullFromMap(mapped)
+	err := result.Unmarshal(mapped)
 	assert.NoError(t, err)
 	//fmt.Printf("Pulled: %#v\n  from: %#v\n", result, mapped)
 	assert.Equal(t, structured, result)
 }
 
-func TestMapperBase_PushToMap(t *testing.T) {
-	result := make(map[string]interface{})
-	err := structured.PushToMap(result)
+func TestMapperBase_Marshal(t *testing.T) {
+	result, err := structured.Marshal()
 	assert.NoError(t, err)
 	//fmt.Printf("Pushed: %#v\n    to: %#v\n", structured, result)
 	assert.Equal(t, mapped, result)

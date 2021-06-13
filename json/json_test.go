@@ -79,20 +79,20 @@ func (film *filmJson) MarshalJSON() ([]byte, error) {
 		Name: film.Name,
 	}
 
-	if convert.Lead, err = film.Mapper().ConvertItemToMap(film.Lead); err != nil {
+	if convert.Lead, err = film.Mapper().Marshal(film.Lead); err != nil {
 		return nil, fmt.Errorf("converting lead to map: %w", err)
 	}
 
 	convert.Cast = make([]interface{}, len(film.Cast))
 	for i, member := range film.Cast {
-		if convert.Cast[i], err = film.Mapper().ConvertItemToMap(member); err != nil {
+		if convert.Cast[i], err = film.Mapper().Marshal(member); err != nil {
 			return nil, fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
 
 	convert.Index = make(map[string]interface{}, len(film.Index))
 	for key, member := range film.Index {
-		if convert.Index[key], err = film.Mapper().ConvertItemToMap(member); err != nil {
+		if convert.Index[key], err = film.Mapper().Marshal(member); err != nil {
 			return nil, fmt.Errorf("converting cast member to map: %w", err)
 		}
 	}
@@ -137,7 +137,7 @@ func (film *filmJson) unmarshalActor(input interface{}) (test.Actor, error) {
 		return nil, fmt.Errorf("actor input should be map")
 	} else if mapper := film.Mapper(); mapper == nil {
 		return nil, fmt.Errorf("no mapper on filmJson")
-	} else if item, err := mapper.CreateItemFromMap(actMap); err != nil {
+	} else if item, err := mapper.Unmarshal(actMap); err != nil {
 		return nil, fmt.Errorf("creating item from map: %w", err)
 	} else if act, ok := item.(test.Actor); !ok {
 		return nil, fmt.Errorf("item is not an actor")
