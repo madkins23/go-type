@@ -10,6 +10,7 @@ import (
 )
 
 type Converter interface {
+	Conversion
 	LoadFromFile(fileName string) (item interface{}, finalErr error)
 	LoadFromString(source string) (interface{}, error)
 	SaveToFile(item interface{}, fileName string) (finalErr error)
@@ -20,6 +21,9 @@ type Converter interface {
 // If the specified Mapper is nil then Highlander() is used to get the global mapper.
 func NewConverter(conversion Conversion, mapper Mapper) Converter {
 	if conversion == nil {
+		// I hate putting panic() anywhere just on general principles.
+		// I also hate returning error results from "constructor" functions.
+		// Since this is a really bad, nothing will work, kind of error I'm going with panic().
 		panic("NewConverter() requires a conversion!")
 	}
 

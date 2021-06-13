@@ -3,6 +3,7 @@ package yaml
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -13,16 +14,15 @@ import (
 	"github.com/madkins23/go-type/test"
 )
 
-// These tests demonstrates and validates use of a Registry to marshal/unmarshal YAML.
-
 var _ serial.Mappable = &filmYaml{}
 
 var testMapper serial.Mapper
 
 type YamlTestSuite struct {
 	suite.Suite
-	film     *filmYaml
-	registry reg.Registry
+	film      *filmYaml
+	registry  reg.Registry
+	converter serial.Converter
 }
 
 func (suite *YamlTestSuite) SetupSuite() {
@@ -57,21 +57,21 @@ func (suite *YamlTestSuite) TestConverterIsRegistry() {
 	var err error
 	conv, err = NewConverter(testMapper)
 	suite.Assert().NoError(err)
-	_, ok := conv.(serial.Mapper)
+	_, ok := conv.(serial.Converter)
 	suite.Assert().True(ok)
 }
 
-/*
 func (suite *YamlTestSuite) TestGetTypeName() {
 	reader := strings.NewReader(simpleYaml)
 	suite.Assert().NotNil(reader)
 
 	// Get type name.
-	name, err := getYamlTypeName(reader)
+	conv, err := NewConverter(testMapper)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal("[testYAML]filmYaml", name)
+	typeName, err := conv.TypeName(reader)
+	suite.Assert().NoError(err)
+	suite.Assert().Equal("[testYAML]filmYaml", typeName)
 }
-*/
 
 //////////////////////////////////////////////////////////////////////////
 
