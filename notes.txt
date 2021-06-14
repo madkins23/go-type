@@ -1,1 +1,5 @@
 Redo README.md to be more general justification for and top level summary of code.
+
+Break out go-serial?
+
+Create DataMap type = map[string]interface{}?
