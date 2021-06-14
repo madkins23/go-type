@@ -1,13 +1,12 @@
-package yaml
+package json
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/madkins23/go-type/reg"
 	"github.com/madkins23/go-type/serial"
@@ -46,17 +45,15 @@ func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 }
 
 func (c conversion) Decode(item interface{}, reader io.Reader) error {
-	if err := yaml.NewDecoder(reader).Decode(item); err != nil {
-		return fmt.Errorf("decode item from YAML %w", err)
+	if err := json.NewDecoder(reader).Decode(item); err != nil {
+		return fmt.Errorf("decode item from JSON %w", err)
 	}
 	return nil
 }
 
 func (c conversion) Encode(item interface{}, writer io.Writer) error {
-	encoder := yaml.NewEncoder(writer)
-	if err := encoder.Encode(item); err != nil {
-		_ = encoder.Close()
-		return fmt.Errorf("encode item to YAML: %w", err)
+	if err := json.NewEncoder(writer).Encode(item); err != nil {
+		return fmt.Errorf("encode item to JSON: %w", err)
 	}
-	return encoder.Close()
+	return nil
 }
