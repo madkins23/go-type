@@ -47,7 +47,7 @@ func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 
 func (c conversion) Decode(item interface{}, reader io.Reader) error {
 	if err := yaml.NewDecoder(reader).Decode(item); err != nil {
-		return fmt.Errorf("decode item from YAML %w", err)
+		return fmt.Errorf("decode item from YAML: %w", err)
 	}
 	return nil
 }

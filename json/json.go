@@ -21,7 +21,7 @@ func NewConverter(mapper serial.Mapper) serial.Converter {
 type conversion struct {
 }
 
-var typeMatcher = regexp.MustCompile("^" + reg.TypeFieldEscaped + ":\\s+(.+)$")
+var typeMatcher = regexp.MustCompile("\"" + reg.TypeFieldEscaped + "\":\\s*\"([^\"]+)\",")
 
 func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 	buffered := bufio.NewReader(reader)
@@ -32,6 +32,7 @@ func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 		} else if err != nil {
 			return "", fmt.Errorf("read line: %w", err)
 		} else if matches := typeMatcher.FindStringSubmatch(string(line)); len(matches) < 1 {
+			fmt.Println(string(line))
 			continue
 		} else if _, err := reader.Seek(0, io.SeekStart); err != nil {
 			return "", fmt.Errorf("reset reader: %w", err)
@@ -46,13 +47,15 @@ func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 
 func (c conversion) Decode(item interface{}, reader io.Reader) error {
 	if err := json.NewDecoder(reader).Decode(item); err != nil {
-		return fmt.Errorf("decode item from JSON %w", err)
+		return fmt.Errorf("decode item from JSON: %w", err)
 	}
 	return nil
 }
 
 func (c conversion) Encode(item interface{}, writer io.Writer) error {
-	if err := json.NewEncoder(writer).Encode(item); err != nil {
+	encoder := json.NewEncoder(writer)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(item); err != nil {
 		return fmt.Errorf("encode item to JSON: %w", err)
 	}
 	return nil

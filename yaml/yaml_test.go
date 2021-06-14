@@ -309,8 +309,6 @@ func (film *filmYaml) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-//////////////////////////////////////////////////////////////////////////
-
 func (film *filmYaml) pullActorFromMap(from interface{}) (test.Actor, error) {
 	if fromMap, ok := from.(map[string]interface{}); !ok {
 		return nil, fmt.Errorf("from is not a map")
