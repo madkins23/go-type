@@ -17,10 +17,12 @@ func Marshal(item interface{}) (map[string]interface{}, error) {
 	return toMap, nil
 }
 
-// Unmarshal converts a nested map data structure into an item.
+// Unmarshal converts a nested map data structure into an existing item.
+// The item must be provided instead of returned as Unmarshal() won't otherwise know what type to use.
+// In addition this function can be used to populate existing items from within their own methods.
 // Currently depends on github.com/mitchellh/mapstructure.
 func Unmarshal(fromMap map[string]interface{}, item interface{}) error {
-	if err := mapstructure.Decode(fromMap, item); err != nil {
+	if err := mapstructure.Decode(fromMap, &item); err != nil {
 		return fmt.Errorf("decode from map: %s", err)
 	}
 

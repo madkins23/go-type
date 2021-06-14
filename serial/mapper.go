@@ -13,6 +13,8 @@ type Mapper interface {
 	Unmarshal(data map[string]interface{}) (interface{}, error)
 }
 
+// NewMapper returns a new Mapper composed with the specified reg.Registry.
+// If the specified reg.Registry is nil then reg.Highlander() is used to get the global registry.
 func NewMapper(registry reg.Registry) Mapper {
 	if registry == nil {
 		registry = reg.Highlander()
@@ -28,6 +30,9 @@ type Mappable interface {
 }
 
 //////////////////////////////////////////////////////////////////////////
+
+var _ Mapper = &mapper{}
+var _ reg.Registry = &mapper{}
 
 type mapper struct {
 	reg.Registry
