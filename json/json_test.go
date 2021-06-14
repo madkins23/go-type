@@ -128,7 +128,6 @@ func (suite *JsonTestSuite) TestSaveToString() {
 	suite.Assert().True(strings.Contains(text, `"<type>":"[test]Bravo"`))
 }
 
-// TODO: Fix!
 func (suite *JsonTestSuite) TestMarshalFileCycle() {
 	file, err := ioutil.TempFile("", "*.test.json")
 	suite.Assert().NoError(err)
@@ -137,18 +136,18 @@ func (suite *JsonTestSuite) TestMarshalFileCycle() {
 	// Go ahead and close it, just needed the file name.
 	suite.Assert().NoError(file.Close())
 
-	film := suite.film
+	film := suite.makeTestFilm()
 	suite.Assert().NoError(suite.converter.SaveToFile(film, fileName))
 
 	reloaded, err := suite.converter.LoadFromFile(fileName)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(reloaded)
 	// TODO: Fix!
-	//suite.Assert().Equal(film, reloaded)
+	suite.Assert().Equal(film, reloaded)
 }
 
 func (suite *JsonTestSuite) TestMarshalStringCycle() {
-	film := suite.film
+	film := suite.makeTestFilm()
 	str, err := suite.converter.SaveToString(film)
 	suite.Assert().NoError(err)
 	suite.NotZero(str)
@@ -159,7 +158,32 @@ func (suite *JsonTestSuite) TestMarshalStringCycle() {
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(reloaded)
 	// TODO: Fix!
-	//suite.Assert().Equal(film, reloaded)
+	suite.Assert().EqualValues(film, reloaded)
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+func (suite *JsonTestSuite) makeTestFilm() *filmJson {
+	actor1 := &test.Alpha{
+		Name:    "Goober Snoofus",
+		Percent: 13.23,
+	}
+	actor2 := &test.Bravo{
+		Finished:   true,
+		Iterations: 1957,
+	}
+	return &filmJson{
+		Name: "Blockbuster",
+		Lead: actor1,
+		Cast: []test.Actor{
+			actor1,
+			actor2,
+		},
+		Index: map[string]test.Actor{
+			"Snoofus, Goober": actor1,
+			"Snarly, Booger":  actor2,
+		},
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
