@@ -41,7 +41,7 @@ func (suite *ReflectTestSuite) TestPackagePath() {
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Make certain reflect.Type supports equivalence testing and use as map key.
+// MakeFake certain reflect.Type supports equivalence testing and use as map key.
 // Note that this does NOT work for types.Type, which is a different thing.
 
 func (suite *ReflectTestSuite) TestTypeEquivalence() {

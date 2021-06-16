@@ -18,7 +18,7 @@ type Alias struct {
 // If the provided registry is nil a non-current Registry will be provided.
 func NewAlias(alias string, registry Registry) *Alias {
 	if registry == nil {
-		registry = NewRegistry()
+		registry = theOne
 	}
 	return &Alias{
 		alias:    alias,
