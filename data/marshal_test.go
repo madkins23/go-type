@@ -1,4 +1,4 @@
-package datamap
+package data
 
 import (
 	"testing"
@@ -13,11 +13,11 @@ type Person struct {
 	Extra  map[string]string
 }
 
-func (p *Person) Marshal() (DataMap, error) {
+func (p *Person) Marshal() (Map, error) {
 	return Marshal(p)
 }
 
-func (p *Person) Unmarshal(fromMap DataMap) error {
+func (p *Person) Unmarshal(fromMap Map) error {
 	return Unmarshal(fromMap, p)
 }
 
@@ -34,11 +34,11 @@ func extra() map[string]string {
 	}
 }
 
-var mapData DataMap
+var mapData Map
 var structured Person
 
 func init() {
-	mapData = DataMap{
+	mapData = Map{
 		"Name":   name,
 		"Age":    age,
 		"Emails": emails(),

@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 
-	"github.com/madkins23/go-type/datamap"
+	"github.com/madkins23/go-type/data"
 )
 
 // PackageName should be set to the known path for this package.
@@ -48,11 +48,11 @@ func (a *Alpha) declaim() string {
 }
 
 func (a *Alpha) Marshal() (map[string]interface{}, error) {
-	return datamap.Marshal(a)
+	return data.Marshal(a)
 }
 
 func (a *Alpha) Unmarshal(fromMap map[string]interface{}) error {
-	return datamap.Unmarshal(fromMap, a)
+	return data.Unmarshal(fromMap, a)
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -78,9 +78,9 @@ func (b *Bravo) declaim() string {
 }
 
 func (b *Bravo) Marshal() (map[string]interface{}, error) {
-	return datamap.Marshal(b)
+	return data.Marshal(b)
 }
 
 func (b *Bravo) Unmarshal(fromMap map[string]interface{}) error {
-	return datamap.Unmarshal(fromMap, b)
+	return data.Unmarshal(fromMap, b)
 }

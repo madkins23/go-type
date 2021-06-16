@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/madkins23/go-type/datamap"
+	"github.com/madkins23/go-type/data"
 	"github.com/madkins23/go-type/reg"
 	"github.com/stretchr/testify/suite"
 )
@@ -24,11 +24,11 @@ type TestProduct struct {
 }
 
 func (tp *TestProduct) Marshal() (map[string]interface{}, error) {
-	return datamap.Marshal(tp)
+	return data.Marshal(tp)
 }
 
 func (tp *TestProduct) Unmarshal(fromMap map[string]interface{}) error {
-	return datamap.Unmarshal(fromMap, tp)
+	return data.Unmarshal(fromMap, tp)
 }
 
 //////////////////////////////////////////////////////////////////////////
