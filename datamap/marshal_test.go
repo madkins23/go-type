@@ -13,11 +13,11 @@ type Person struct {
 	Extra  map[string]string
 }
 
-func (p *Person) Marshal() (map[string]interface{}, error) {
+func (p *Person) Marshal() (DataMap, error) {
 	return Marshal(p)
 }
 
-func (p *Person) Unmarshal(fromMap map[string]interface{}) error {
+func (p *Person) Unmarshal(fromMap DataMap) error {
 	return Unmarshal(fromMap, p)
 }
 
@@ -34,11 +34,11 @@ func extra() map[string]string {
 	}
 }
 
-var mapData map[string]interface{}
+var mapData DataMap
 var structured Person
 
 func init() {
-	mapData = map[string]interface{}{
+	mapData = DataMap{
 		"Name":   name,
 		"Age":    age,
 		"Emails": emails(),
