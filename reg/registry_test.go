@@ -10,15 +10,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/madkins23/go-type/test"
 )
 
 //////////////////////////////////////////////////////////////////////////
 
 func ExampleRegistry_AddAlias() {
 	registry := NewRegistry()
-	if registry.AddAlias("[alpha]", &test.Alpha{}) == nil {
+	if registry.AddAlias("[alpha]", &Alpha{}) == nil {
 		fmt.Println("Aliased")
 	}
 	// output: Aliased
@@ -26,7 +24,7 @@ func ExampleRegistry_AddAlias() {
 
 func ExampleRegistry_Register() {
 	registry := NewRegistry()
-	if registry.Register(&test.Alpha{}) == nil {
+	if registry.Register(&Alpha{}) == nil {
 		fmt.Println("Registered")
 	}
 	// output: Registered
@@ -60,7 +58,7 @@ func (suite *registryTestSuite) TestNewRegistry() {
 }
 
 func (suite *registryTestSuite) TestAlias() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	err := suite.registry.AddAlias("badPackage", &example)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "no package path")
@@ -74,7 +72,7 @@ func (suite *registryTestSuite) TestAlias() {
 }
 
 func (suite *registryTestSuite) TestRegister() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	err := suite.registry.Register(&example)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "no path for type")
@@ -90,31 +88,31 @@ func (suite *registryTestSuite) TestRegister() {
 }
 
 func (suite *registryTestSuite) TestNameFor() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	suite.Assert().NoError(suite.registry.Register(example))
 	exType, err := suite.registry.NameFor(example)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", exType)
+	suite.Assert().Equal(packageName+"/Alpha", exType)
 }
 
 func (suite *registryTestSuite) TestMake() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	suite.Assert().NoError(suite.registry.Register(example))
-	item, err := suite.registry.Make(test.PackageName + "/Alpha")
+	item, err := suite.registry.Make(packageName + "/Alpha")
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(item)
 	suite.Assert().IsType(example, item)
 }
 
 func (suite *registryTestSuite) TestCycleSimple() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	suite.Assert().NoError(suite.registry.Register(example))
 	registration := suite.reg.byType[reflect.TypeOf(example).Elem()]
 	suite.Assert().NotNil(registration)
 	suite.Assert().Len(registration.allNames, 1)
 	name, err := suite.registry.NameFor(example)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", name)
+	suite.Assert().Equal(packageName+"/Alpha", name)
 	object, err := suite.registry.Make(name)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(object)
@@ -122,7 +120,7 @@ func (suite *registryTestSuite) TestCycleSimple() {
 }
 
 func (suite *registryTestSuite) TestCycleAlias() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	suite.Assert().NoError(suite.registry.AddAlias("typeUtils", example))
 	suite.Assert().NoError(suite.registry.Register(example))
 	exType := reflect.TypeOf(example)
@@ -144,21 +142,21 @@ func (suite *registryTestSuite) TestCycleAlias() {
 }
 
 func (suite *registryTestSuite) TestGenNames() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	name, aliases, err := suite.reg.genNames(example, false)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", name)
+	suite.Assert().Equal(packageName+"/Alpha", name)
 	suite.Assert().Nil(aliases)
 	name, aliases, err = suite.reg.genNames(example, true)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", name)
+	suite.Assert().Equal(packageName+"/Alpha", name)
 	suite.Assert().NotNil(aliases)
 	suite.Assert().Empty(aliases)
 
 	suite.Assert().NoError(suite.registry.AddAlias("typeUtils", example))
 	name, aliases, err = suite.reg.genNames(example, false)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", name)
+	suite.Assert().Equal(packageName+"/Alpha", name)
 	suite.Assert().Nil(aliases)
 	name, aliases, err = suite.reg.genNames(example, true)
 	suite.Assert().NoError(err)
@@ -175,10 +173,10 @@ func (suite *registryTestSuite) TestGenNames() {
 }
 
 func (suite *registryTestSuite) TestGenTypeName() {
-	example := &test.Alpha{}
+	example := &Alpha{}
 	name, err := genNameFromInterface(example)
 	suite.Assert().NoError(err)
-	suite.Assert().Equal(test.PackageName+"/Alpha", name)
+	suite.Assert().Equal(packageName+"/Alpha", name)
 
 	_, err = genNameFromInterface(&example)
 	suite.Assert().Error(err)
