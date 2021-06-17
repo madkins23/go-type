@@ -85,9 +85,6 @@ type Account struct {
 }
 
 func (a *Account) MarshalJSON() ([]byte, error) {
-
-	// TODO: use a simplistic account where the positions are all Wrappers?
-
 	temp, err := data.Marshal(a)
 	if err != nil {
 		return nil, fmt.Errorf("create data.Map: %w", err)
@@ -133,59 +130,55 @@ func (a *Account) MarshalJSON() ([]byte, error) {
 	return []byte(build.String()), nil
 }
 
-func (a *Account) UnmarshalJSON(marshaled []byte) error {
-	dataMap := make(data.Map)
-	decoder := json.NewDecoder(strings.NewReader(string(marshaled)))
-	if err := decoder.Decode(&dataMap); err != nil {
-		return fmt.Errorf("decode JSON: %w", err)
+type loadAccount struct {
+	Account struct {
+		Favorite  *Wrapper
+		Positions []*Wrapper
+		Lookup    map[string]*Wrapper
+	}
+}
+
+func (a *Account) getInvestment(w *Wrapper) (test.Investment, error) {
+	var ok bool
+	var investment test.Investment
+	if w != nil {
+		if item, err := w.Unwrap(); err != nil {
+			return nil, fmt.Errorf("unwrap item: %w", err)
+		} else if investment, ok = item.(test.Investment); !ok {
+			return nil, fmt.Errorf("item %#v not Investment", item)
+		}
 	}
 
-	if compAccount, found := dataMap["Account"]; !found {
-		return fmt.Errorf("no composited Account")
-	} else if labAccount, ok := compAccount.(map[string]interface{}); !ok {
-		return fmt.Errorf("bad composited Account:  %#v", labAccount)
-	} else {
-		var err error
-		if labAccount["Favorite"] != nil {
-			if favorite, ok := labAccount["Favorite"].(map[string]interface{}); !ok {
-				return fmt.Errorf("favorite not data map")
-			} else if labAccount["Favorite"], err = UnwrapItem(favorite); err != nil {
-				return fmt.Errorf("unwrap item: %w", err)
+	return investment, nil
+}
+
+func (a *Account) UnmarshalJSON(marshaled []byte) error {
+	loader := &loadAccount{}
+	if err := json.Unmarshal(marshaled, loader); err != nil {
+		return fmt.Errorf("unmarshal to loader: %w", err)
+	}
+
+	var err error
+	if a.Favorite, err = a.getInvestment(loader.Account.Favorite); err != nil {
+		return fmt.Errorf("get Investment from Favorite")
+	}
+	if loader.Account.Positions != nil {
+		fixed := make([]test.Investment, len(loader.Account.Positions))
+		for i, wPos := range loader.Account.Positions {
+			if fixed[i], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Positions")
 			}
 		}
-		if labAccount["Positions"] != nil {
-			if positions, ok := (labAccount["Positions"]).([]interface{}); !ok {
-				return fmt.Errorf("positions not array")
-			} else {
-				fixed := make([]interface{}, len(positions))
-				for i, pos := range positions {
-					if position, ok := pos.(map[string]interface{}); !ok {
-						return fmt.Errorf("position not data map")
-					} else if fixed[i], err = UnwrapItem(position); err != nil {
-						return fmt.Errorf("unwrap item: %w", err)
-					}
-				}
-				labAccount["Positions"] = fixed
+		a.Positions = fixed
+	}
+	if loader.Account.Lookup != nil {
+		fixed := make(map[string]test.Investment, len(loader.Account.Lookup))
+		for key, wPos := range loader.Account.Lookup {
+			if fixed[key], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Lookup")
 			}
 		}
-		if labAccount["Lookup"] != nil {
-			if lookup, ok := (labAccount["Lookup"]).(map[string]interface{}); !ok {
-				return fmt.Errorf("lookup not map")
-			} else {
-				fixed := make(map[string]interface{}, len(lookup))
-				for key, pos := range lookup {
-					if position, ok := pos.(map[string]interface{}); !ok {
-						return fmt.Errorf("lookup position not data map")
-					} else if fixed[key], err = UnwrapItem(position); err != nil {
-						return fmt.Errorf("unwrap item: %w", err)
-					}
-				}
-				labAccount["Lookup"] = fixed
-			}
-		}
-		if err := data.Unmarshal(dataMap, a); err != nil {
-			return fmt.Errorf("unmarshal map data: %w", err)
-		}
+		a.Lookup = fixed
 	}
 
 	return nil
