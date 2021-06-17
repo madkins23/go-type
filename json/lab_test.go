@@ -4,26 +4,31 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"os"
+	"strconv"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/madkins23/go-type/data"
 	"github.com/madkins23/go-type/reg"
 	"github.com/madkins23/go-type/test"
 )
 
 // Trial and error approach to simplifying things.
 
-var showAccount = false
-
 type LabTestSuite struct {
 	suite.Suite
+	showAccount bool
 }
 
 func (suite *LabTestSuite) SetupSuite() {
+	if showAccount, found := os.LookupEnv("GO-TYPE-SHOW-ACCOUNT"); found {
+		var err error
+		suite.showAccount, err = strconv.ParseBool(showAccount)
+		suite.Require().NoError(err)
+	}
+	suite.showAccount = true
 	suite.Require().NoError(reg.AddAlias("test", test.Account{}), "creating test alias")
 	suite.Require().NoError(reg.Register(&test.Stock{}))
 	suite.Require().NoError(reg.Register(&test.Bond{}))
@@ -44,7 +49,7 @@ func (suite *LabTestSuite) TestMarshalCycle() {
 
 	marshaled, err := json.Marshal(account)
 	suite.Require().NoError(err)
-	if showAccount {
+	if suite.showAccount {
 		var buf bytes.Buffer
 		suite.Require().NoError(json.Indent(&buf, marshaled, "", "  "))
 		fmt.Println(buf.String())
@@ -55,7 +60,7 @@ func (suite *LabTestSuite) TestMarshalCycle() {
 
 	var newAccount Account
 	suite.Require().NoError(json.Unmarshal(marshaled, &newAccount))
-	if showAccount {
+	if suite.showAccount {
 		fmt.Println("---------------------------")
 		spew.Dump(newAccount)
 	}
@@ -84,58 +89,77 @@ type Account struct {
 	test.Account
 }
 
-func (a *Account) MarshalJSON() ([]byte, error) {
-	temp, err := data.Marshal(a)
-	if err != nil {
-		return nil, fmt.Errorf("create data.Map: %w", err)
-	}
-
-	// Wrap objects referenced by interface fields.
-	if compAccount, found := temp["Account"]; !found {
-		return nil, fmt.Errorf("no composited Account")
-	} else if labAccount, ok := compAccount.(map[string]interface{}); !ok {
-		return nil, fmt.Errorf("bad composited Account:  %#v", labAccount)
-	} else {
-		if a.Favorite != nil {
-			if labAccount["Favorite"], err = WrapItem(a.Favorite); err != nil {
-				return nil, fmt.Errorf("wrap favorite: %w", err)
-			}
-		}
-		if a.Positions != nil {
-			fixed := make([]*Wrapper, len(a.Positions))
-			for i, pos := range a.Positions {
-				if fixed[i], err = WrapItem(pos); err != nil {
-					return nil, fmt.Errorf("wrap Positions item: %w", err)
-				}
-			}
-			labAccount["Positions"] = fixed
-		}
-		if a.Lookup != nil {
-			fixed := make(map[string]*Wrapper, len(a.Lookup))
-			for k, pos := range a.Lookup {
-				if fixed[k], err = WrapItem(pos); err != nil {
-					return nil, fmt.Errorf("wrap Lookup item: %w", err)
-				}
-			}
-			labAccount["Lookup"] = fixed
-		}
-	}
-
-	build := &strings.Builder{}
-	encoder := json.NewEncoder(build)
-	encoder.SetEscapeHTML(false)
-	if err = encoder.Encode(temp); err != nil {
-		return nil, fmt.Errorf("encode wrapped item to JSON: %w", err)
-	}
-	return []byte(build.String()), nil
-}
-
-type loadAccount struct {
+type xferAccount struct {
 	Account struct {
 		Favorite  *Wrapper
 		Positions []*Wrapper
 		Lookup    map[string]*Wrapper
 	}
+}
+
+func (a *Account) MarshalJSON() ([]byte, error) {
+	xfer := &xferAccount{}
+
+	// Wrap objects referenced by interface fields.
+	var err error
+	if a.Favorite != nil {
+		if xfer.Account.Favorite, err = WrapItem(a.Favorite); err != nil {
+			return nil, fmt.Errorf("wrap favorite: %w", err)
+		}
+	}
+	if a.Positions != nil {
+		fixed := make([]*Wrapper, len(a.Positions))
+		for i, pos := range a.Positions {
+			if fixed[i], err = WrapItem(pos); err != nil {
+				return nil, fmt.Errorf("wrap Positions item: %w", err)
+			}
+		}
+		xfer.Account.Positions = fixed
+	}
+	if a.Lookup != nil {
+		fixed := make(map[string]*Wrapper, len(a.Lookup))
+		for k, pos := range a.Lookup {
+			if fixed[k], err = WrapItem(pos); err != nil {
+				return nil, fmt.Errorf("wrap Lookup item: %w", err)
+			}
+		}
+		xfer.Account.Lookup = fixed
+	}
+
+	return json.Marshal(xfer)
+}
+
+func (a *Account) UnmarshalJSON(marshaled []byte) error {
+	xfer := &xferAccount{}
+	if err := json.Unmarshal(marshaled, xfer); err != nil {
+		return fmt.Errorf("unmarshal to loader: %w", err)
+	}
+
+	// Unwrap objects referenced by interface fields.
+	var err error
+	if a.Favorite, err = a.getInvestment(xfer.Account.Favorite); err != nil {
+		return fmt.Errorf("get Investment from Favorite")
+	}
+	if xfer.Account.Positions != nil {
+		fixed := make([]test.Investment, len(xfer.Account.Positions))
+		for i, wPos := range xfer.Account.Positions {
+			if fixed[i], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Positions")
+			}
+		}
+		a.Positions = fixed
+	}
+	if xfer.Account.Lookup != nil {
+		fixed := make(map[string]test.Investment, len(xfer.Account.Lookup))
+		for key, wPos := range xfer.Account.Lookup {
+			if fixed[key], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Lookup")
+			}
+		}
+		a.Lookup = fixed
+	}
+
+	return nil
 }
 
 func (a *Account) getInvestment(w *Wrapper) (test.Investment, error) {
@@ -150,36 +174,4 @@ func (a *Account) getInvestment(w *Wrapper) (test.Investment, error) {
 	}
 
 	return investment, nil
-}
-
-func (a *Account) UnmarshalJSON(marshaled []byte) error {
-	loader := &loadAccount{}
-	if err := json.Unmarshal(marshaled, loader); err != nil {
-		return fmt.Errorf("unmarshal to loader: %w", err)
-	}
-
-	var err error
-	if a.Favorite, err = a.getInvestment(loader.Account.Favorite); err != nil {
-		return fmt.Errorf("get Investment from Favorite")
-	}
-	if loader.Account.Positions != nil {
-		fixed := make([]test.Investment, len(loader.Account.Positions))
-		for i, wPos := range loader.Account.Positions {
-			if fixed[i], err = a.getInvestment(wPos); err != nil {
-				return fmt.Errorf("get Investment from Positions")
-			}
-		}
-		a.Positions = fixed
-	}
-	if loader.Account.Lookup != nil {
-		fixed := make(map[string]test.Investment, len(loader.Account.Lookup))
-		for key, wPos := range loader.Account.Lookup {
-			if fixed[key], err = a.getInvestment(wPos); err != nil {
-				return fmt.Errorf("get Investment from Lookup")
-			}
-		}
-		a.Lookup = fixed
-	}
-
-	return nil
 }
