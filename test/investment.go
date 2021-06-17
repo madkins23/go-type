@@ -38,6 +38,7 @@ func (a *Account) MakeFakeUsing(costco, walmart *Stock, tBill *Bond) {
 
 type Investment interface {
 	CurrentValue() (float32, error)
+	Reset()
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -55,6 +56,10 @@ type Stock struct {
 
 func (s *Stock) CurrentValue() (float32, error) {
 	return s.Position * s.Value, nil
+}
+
+func (s *Stock) Reset() {
+	s.notes = ""
 }
 
 func (s *Stock) ConfigureCostco() *Stock {
@@ -93,12 +98,15 @@ type Bond struct {
 	Value    float32
 	Interest float32
 	Duration time.Duration
-	Expires  time.Time
 	notes    string
 }
 
 func (b *Bond) CurrentValue() (float32, error) {
 	return b.Value, nil
+}
+
+func (b *Bond) Reset() {
+	b.notes = ""
 }
 
 func (b *Bond) ConfigureTBill() *Bond {
@@ -107,7 +115,6 @@ func (b *Bond) ConfigureTBill() *Bond {
 	b.Value = 1000
 	b.Interest = 0.75
 	b.Duration = 365 * 24 * time.Hour
-	b.Expires = time.Now().Add(23 * 24 * time.Hour)
 	b.notes = "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 	return b
 }

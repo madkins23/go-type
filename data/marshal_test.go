@@ -3,8 +3,15 @@ package data
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
+
+type Marshalable interface {
+	Marshal() (Map, error)
+	Unmarshal(fromMap Map) error
+}
 
 type Person struct {
 	Name   string
@@ -36,6 +43,7 @@ func extra() map[string]string {
 
 var mapData Map
 var structured Person
+var iface Marshalable
 
 func init() {
 	mapData = Map{
@@ -50,30 +58,49 @@ func init() {
 		Emails: emails(),
 		Extra:  extra(),
 	}
+	iface = &Person{
+		Name:   name,
+		Age:    age,
+		Emails: emails(),
+		Extra:  extra(),
+	}
 }
 
 func TestMapperBase_Marshal(t *testing.T) {
 	result, err := Marshal(structured)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+	assert.Equal(t, mapData, result)
+	result, err = Marshal(iface)
+	require.NoError(t, err)
 	assert.Equal(t, mapData, result)
 }
 
 func TestMapperBase_Marshal_viaMethod(t *testing.T) {
 	result, err := structured.Marshal()
-	assert.NoError(t, err)
+	require.NoError(t, err)
+	assert.Equal(t, mapData, result)
+	result, err = iface.Marshal()
+	require.NoError(t, err)
 	assert.Equal(t, mapData, result)
 }
 
 func TestMapperBase_Unmarshal_viaMethod(t *testing.T) {
-	var result Person
-	err := result.Unmarshal(mapData)
-	assert.NoError(t, err)
-	assert.Equal(t, structured, result)
+	var result1 Person
+	err := result1.Unmarshal(mapData)
+	require.NoError(t, err)
+	assert.Equal(t, structured, result1)
+	var result2 Person
+	require.NoError(t, result2.Unmarshal(mapData))
 }
 
 func TestMapperBase_Unmarshal(t *testing.T) {
-	var result Person
-	err := Unmarshal(mapData, &result)
-	assert.NoError(t, err)
-	assert.Equal(t, structured, result)
+	var result1 Person
+	err := Unmarshal(mapData, &result1)
+	require.NoError(t, err)
+	assert.Equal(t, structured, result1)
+	var result2 Person
+	var ires interface{} = &result2
+	err = Unmarshal(mapData, ires)
+	require.NoError(t, err)
+	assert.Equal(t, structured, result2)
 }
