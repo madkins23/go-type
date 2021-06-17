@@ -18,7 +18,7 @@ import (
 
 // Trial and error approach to simplifying things.
 
-var showAccount = true
+var showAccount = false
 
 type LabTestSuite struct {
 	suite.Suite
@@ -63,12 +63,12 @@ func (suite *LabTestSuite) TestMarshalCycle() {
 	}
 
 	suite.Assert().NotEqual(account, newAccount)
-	account.Favorite.Reset()
+	account.Favorite.ClearPrivateFields()
 	for _, position := range account.Positions {
-		position.Reset()
+		position.ClearPrivateFields()
 	}
 	for _, position := range account.Lookup {
-		position.Reset()
+		position.ClearPrivateFields()
 	}
 	// Succeeds now that unexported (private) fields are gone.
 	suite.Assert().Equal(account, &newAccount)

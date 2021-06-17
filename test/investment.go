@@ -38,7 +38,7 @@ func (a *Account) MakeFakeUsing(costco, walmart *Stock, tBill *Bond) {
 
 type Investment interface {
 	CurrentValue() (float32, error)
-	Reset()
+	ClearPrivateFields()
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -58,7 +58,7 @@ func (s *Stock) CurrentValue() (float32, error) {
 	return s.Position * s.Value, nil
 }
 
-func (s *Stock) Reset() {
+func (s *Stock) ClearPrivateFields() {
 	s.notes = ""
 }
 
@@ -105,7 +105,7 @@ func (b *Bond) CurrentValue() (float32, error) {
 	return b.Value, nil
 }
 
-func (b *Bond) Reset() {
+func (b *Bond) ClearPrivateFields() {
 	b.notes = ""
 }
 

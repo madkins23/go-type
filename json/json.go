@@ -32,7 +32,6 @@ func (c conversion) TypeName(reader io.ReadSeeker) (string, error) {
 		} else if err != nil {
 			return "", fmt.Errorf("read line: %w", err)
 		} else if matches := typeMatcher.FindStringSubmatch(string(line)); len(matches) < 1 {
-			fmt.Println(string(line))
 			continue
 		} else if _, err := reader.Seek(0, io.SeekStart); err != nil {
 			return "", fmt.Errorf("reset reader: %w", err)
