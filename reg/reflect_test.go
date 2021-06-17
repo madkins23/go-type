@@ -1,6 +1,7 @@
 package reg
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -72,4 +73,30 @@ func (suite *ReflectTestSuite) TestMapInterface() {
 	suite.Assert().Equal("charlie", lookup[reflect.TypeOf(ai)])
 	suite.Assert().Equal("bravo", lookup[reflect.TypeOf(bi)])
 	suite.Assert().Equal("charlie", lookup[reflect.TypeOf(ci)])
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+const packageName = "github.com/madkins23/go-type/reg"
+
+type Stuff interface {
+	Info() string
+}
+
+type Alpha struct {
+	Name   string
+	Number float32
+}
+
+func (a *Alpha) Info() string {
+	return fmt.Sprintf("%s: %f", a.Name, a.Number)
+}
+
+type Bravo struct {
+	Finished   bool
+	Iterations int
+}
+
+func (b *Bravo) Info() string {
+	return fmt.Sprintf("%t: %d", b.Finished, b.Iterations)
 }
