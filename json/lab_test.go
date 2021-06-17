@@ -8,12 +8,11 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/madkins23/go-type/data"
-
 	"github.com/madkins23/go-type/reg"
 	"github.com/madkins23/go-type/test"
-	"github.com/stretchr/testify/suite"
 )
 
 // Trial and error approach to simplifying things.
@@ -43,7 +42,6 @@ func TestLabSuite(t *testing.T) {
 func (suite *LabTestSuite) TestMarshalCycle() {
 	account := MakeAccount()
 
-	// TODO: Still HTML-escaping, damn it.
 	marshaled, err := json.Marshal(account)
 	suite.Require().NoError(err)
 	if showAccount {
@@ -87,6 +85,9 @@ type Account struct {
 }
 
 func (a *Account) MarshalJSON() ([]byte, error) {
+
+	// TODO: use a simplistic account where the positions are all Wrappers?
+
 	temp, err := data.Marshal(a)
 	if err != nil {
 		return nil, fmt.Errorf("create data.Map: %w", err)
@@ -189,57 +190,3 @@ func (a *Account) UnmarshalJSON(marshaled []byte) error {
 
 	return nil
 }
-
-//////////////////////////////////////////////////////////////////////////
-
-var simpleLabJson = `
-{
-  "Favorite": {
-    "Market": "NASDAQ",
-    "Symbol": "COST",
-    "Name": "Costco",
-    "Position": 10,
-    "Value": 400
-  },
-  "Positions": [
-    {
-      "Market": "NASDAQ",
-      "Symbol": "COST",
-      "Name": "Costco",
-      "Position": 10,
-      "Value": 400
-    },
-    {
-      "Market": "NYSE",
-      "Symbol": "WMT",
-      "Name": "Walmart",
-      "Position": 20,
-      "Value": 150
-    },
-    {
-      "Source": "Treasury",
-      "Name": "T-Bill",
-      "Value": 1000,
-      "Interest": 0.75,
-      "Duration": 31536000000000000,
-      "Expires": "2021-07-08T11:34:13.556165402-07:00"
-    }
-  ],
-  "Lookup": {
-    "COST": {
-      "Market": "NASDAQ",
-      "Symbol": "COST",
-      "Name": "Costco",
-      "Position": 10,
-      "Value": 400
-    },
-    "WMT": {
-      "Market": "NYSE",
-      "Symbol": "WMT",
-      "Name": "Walmart",
-      "Position": 20,
-      "Value": 150
-    }
-  }
-}
-`

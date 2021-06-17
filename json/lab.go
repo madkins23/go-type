@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/madkins23/go-type/data"
-
 	"github.com/madkins23/go-type/reg"
 )
 
@@ -46,8 +45,8 @@ func UnwrapItem(dataMap data.Map) (interface{}, error) {
 	} else if item, err := reg.Make(typeName); err != nil {
 		return nil, fmt.Errorf("make instance of type %s: %w", typeName, err)
 	} else {
-		// TODO: Irritating:
-		// Re-construct contents into JSON so it can be decoded again.
+		// TODO: Irritating and wrong...
+		// Re-construct contents into JSON so it can be decoded again as the proper type.
 		build := &strings.Builder{}
 		encoder := json.NewEncoder(build)
 		if err = encoder.Encode(fieldValue); err != nil {
