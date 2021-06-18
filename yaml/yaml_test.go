@@ -2,55 +2,41 @@ package yaml
 
 import (
 	"fmt"
-	"io/ioutil"
-	"strings"
+	"os"
+	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/suite"
 	"gopkg.in/yaml.v3"
 
+	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/suite"
+
 	"github.com/madkins23/go-type/reg"
-	"github.com/madkins23/go-type/serial"
 	"github.com/madkins23/go-type/test"
 )
 
-var _ serial.Mappable = &filmYaml{}
-
-// testMapper must be global to be accessible from filmYaml.
-// Normally this would be provided by serial.Highlander(),
-// but for testing purposes create it globally so it uses the local Registry object.
-var testMapper serial.Mapper
+// Trial and error approach to simplifying things.
 
 type YamlTestSuite struct {
 	suite.Suite
-	film      *filmYaml
-	registry  reg.Registry
-	mapper    serial.Mapper
-	converter serial.Converter
+	showAccount bool
 }
 
 func (suite *YamlTestSuite) SetupSuite() {
-	suite.registry = reg.NewRegistry()
-	suite.Assert().NotNil(suite.registry)
-	suite.mapper = serial.NewMapper(suite.registry)
-	suite.Assert().NotNil(suite.mapper)
-	suite.Assert().NoError(suite.registry.AddAlias("test", test.Alpha{}), "creating test alias")
-	suite.Assert().NoError(suite.registry.AddAlias("testYAML", &filmYaml{}), "creating testYAML alias")
-	suite.Assert().NoError(suite.registry.Register(&filmYaml{}))
-	suite.Assert().NoError(suite.registry.Register(&test.Alpha{}))
-	suite.Assert().NoError(suite.registry.Register(&test.Bravo{}))
-	testMapper = suite.mapper // no other convenient way to pass to where it's needed
+	if showAccount, found := os.LookupEnv("GO-TYPE-SHOW-ACCOUNT"); found {
+		var err error
+		suite.showAccount, err = strconv.ParseBool(showAccount)
+		suite.Require().NoError(err)
+	}
+	suite.showAccount = true
+	suite.Require().NoError(reg.AddAlias("test", test.Account{}), "creating test alias")
+	suite.Require().NoError(reg.Register(&test.Stock{}))
+	suite.Require().NoError(reg.Register(&test.Bond{}))
+	suite.Require().NoError(reg.AddAlias("yamlTest", Account{}), "creating test alias")
+	suite.Require().NoError(reg.Register(&Account{}))
 }
 
 func (suite *YamlTestSuite) SetupTest() {
-	suite.converter = NewConverter(testMapper)
-	suite.Assert().NotNil(suite.converter)
-	suite.film = &filmYaml{Name: "Test YAML", Index: make(map[string]test.Actor)}
-	suite.film.Lead = &test.Alpha{Name: "Goober", Percent: 13.23}
-	suite.film.addActor("Goober", suite.film.Lead)
-	suite.film.addActor("Snoofus", test.NewBravo(false, 17, "stuff"))
-	suite.film.addActor("Noodle", test.NewAlpha("Noodle", 19.57, "stuff"))
-	suite.film.addActor("Soup", test.NewBravo(true, 79, ""))
 }
 
 func TestYamlSuite(t *testing.T) {
@@ -59,304 +45,198 @@ func TestYamlSuite(t *testing.T) {
 
 //////////////////////////////////////////////////////////////////////////
 
-func (suite *YamlTestSuite) TestConverterIsRegistry() {
-	_, ok := suite.converter.(reg.Registry)
-	suite.Assert().True(ok)
-}
-
-func (suite *YamlTestSuite) TestGetTypeName() {
-	reader := strings.NewReader(simpleYaml)
-	suite.Assert().NotNil(reader)
-	typeName, err := suite.converter.TypeName(reader)
-	suite.Assert().NoError(err)
-	suite.Assert().Equal("[testYAML]filmYaml", typeName)
-}
+//// TestExample duplicates the YAML test.
+//// TODO: Not directly applicable to this test suite.
+//func (suite *JsonTestSuite) TestExample() {
+//	type T struct {
+//		F int `yaml:"a,omitempty"`
+//		B int
+//	}
+//	t := T{F: 1, B: 2}
+//	bytes, err := yaml.Marshal(t)
+//	suite.Assert().NoError(err)
+//	var x T
+//	suite.Assert().NoError(yaml.Unmarshal(bytes, &x))
+//	suite.Assert().Equal(t, x)
+//}
 
 //////////////////////////////////////////////////////////////////////////
 
-// TestMarshalCycle verifies the YAML Marshal/Unmarshal works as expected.
+// TestMarshalCycle verifies the JSON Marshal/Unmarshal works as expected.
 func (suite *YamlTestSuite) TestMarshalCycle() {
-	bytes, err := yaml.Marshal(suite.film)
-	suite.Assert().NoError(err)
+	account := MakeAccount()
 
-	fmt.Print("--- TestMarshalCycle ---------------\n", string(bytes), "------------------------------------\n")
-
-	var film filmYaml
-	suite.Assert().NoError(yaml.Unmarshal(bytes, &film))
-	suite.Assert().NotEqual(suite.film, &film) // fails due to unexported field 'extra'
-	for _, act := range suite.film.Cast {
-		// Remove unexported field.
-		if a, ok := act.(*test.Alpha); ok {
-			a.ClearExtra()
-		} else if b, ok := act.(*test.Bravo); ok {
-			b.ClearExtra()
-		}
+	marshaled, err := yaml.Marshal(account)
+	suite.Require().NoError(err)
+	if suite.showAccount {
+		fmt.Println(string(marshaled))
 	}
-	suite.Assert().Equal(suite.film, &film) // succeeds now that unexported fields are gone.
+	suite.Assert().Contains(string(marshaled), "typename:")
+	suite.Assert().Contains(string(marshaled), "[test]Stock")
+	suite.Assert().Contains(string(marshaled), "[test]Bond")
+
+	var newAccount Account
+	suite.Require().NoError(yaml.Unmarshal(marshaled, &newAccount))
+	if suite.showAccount {
+		fmt.Println("---------------------------")
+		spew.Dump(newAccount)
+	}
+
+	suite.Assert().NotEqual(account, newAccount)
+	account.Favorite.ClearPrivateFields()
+	for _, position := range account.Positions {
+		position.ClearPrivateFields()
+	}
+	for _, position := range account.Lookup {
+		position.ClearPrivateFields()
+	}
+	// Succeeds now that unexported (private) fields are gone.
+	suite.Assert().Equal(account, &newAccount)
 }
 
-func (suite *YamlTestSuite) TestLoadFromString() {
-	loaded, err := suite.converter.LoadFromString(simpleYaml)
-	suite.Assert().NoError(err)
-	suite.Assert().NotNil(loaded)
-	film, ok := loaded.(*filmYaml)
-	suite.Assert().True(ok)
-	suite.Assert().NotNil(film)
-	suite.Assert().Equal("Blockbuster Movie", film.Name)
-	suite.checkAlpha(film.Lead)
-	suite.Assert().NotNil(film.Cast)
-	suite.Assert().Len(film.Cast, 2)
-	suite.checkAlpha(film.Cast[0])
-	suite.checkBravo(film.Cast[1])
-	suite.Assert().NotNil(film.Index)
-	suite.Assert().Len(film.Index, 2)
-	suite.checkAlpha(film.Index["Lucky, Lance"])
-	suite.checkBravo(film.Index["Queue, Susie"])
-}
-
-func (suite *YamlTestSuite) TestMarshalFileCycle() {
-	file, err := ioutil.TempFile("", "*.test.yaml")
-	suite.Assert().NoError(err)
-	suite.Assert().NotNil(file)
-	fileName := file.Name()
-	// Go ahead and close it, just needed the file name.
-	suite.Assert().NoError(file.Close())
-
-	film := suite.makeTestFilm()
-	suite.Assert().NoError(suite.converter.SaveToFile(film, fileName))
-
-	reloaded, err := suite.converter.LoadFromFile(fileName)
-	suite.Assert().NoError(err)
-	suite.Assert().NotNil(reloaded)
-	suite.Assert().Equal(film, reloaded)
-}
-
-func (suite *YamlTestSuite) TestMarshalStringCycle() {
-	film := suite.makeTestFilm()
-	str, err := suite.converter.SaveToString(film)
-	suite.Assert().NoError(err)
-	suite.NotZero(str)
-
-	fmt.Print("--- TestMarshalStringCycle ---------\n", str, "------------------------------------\n")
-
-	reloaded, err := suite.converter.LoadFromString(str)
-	suite.Assert().NoError(err)
-	suite.Assert().NotNil(reloaded)
-	suite.Assert().Equal(film, reloaded)
-}
+//func (suite *JsonTestSuite) TestLoadFromString() {
+//	item, err := suite.converter.LoadFromString(simpleJson)
+//	suite.Assert().NoError(err)
+//	suite.Assert().NotNil(item)
+//}
+//
+//func (suite *JsonTestSuite) TestSaveToString() {
+//	text, err := suite.converter.SaveToString(suite.film)
+//	suite.Assert().NoError(err)
+//	suite.Assert().NotEmpty(text)
+//	suite.Assert().True(strings.Contains(text, `"<type>":"[testJSON]filmJson"`))
+//	suite.Assert().True(strings.Contains(text, `"<type>":"[test]Alpha"`))
+//	suite.Assert().True(strings.Contains(text, `"<type>":"[test]Bravo"`))
+//}
+//
+//func (suite *JsonTestSuite) TestMarshalFileCycle() {
+//	file, err := ioutil.TempFile("", "*.test.json")
+//	suite.Assert().NoError(err)
+//	suite.Assert().NotNil(file)
+//	fileName := file.Name()
+//	// Go ahead and close it, just needed the file name.
+//	suite.Assert().NoError(file.Close())
+//
+//	film := suite.makeTestFilm()
+//	suite.Assert().NoError(suite.converter.SaveToFile(film, fileName))
+//
+//	reloaded, err := suite.converter.LoadFromFile(fileName)
+//	suite.Assert().NoError(err)
+//	suite.Assert().NotNil(reloaded)
+//	// TODO: Fix!
+//	suite.Assert().Equal(film, reloaded)
+//}
+//
+//func (suite *JsonTestSuite) TestMarshalStringCycle() {
+//	film := suite.makeTestFilm()
+//	str, err := suite.converter.SaveToString(film)
+//	suite.Assert().NoError(err)
+//	suite.NotZero(str)
+//
+//	fmt.Print("--- TestMarshalStringCycle ---------\n", str, "------------------------------------\n")
+//
+//	reloaded, err := suite.converter.LoadFromString(str)
+//	suite.Assert().NoError(err)
+//	suite.Assert().NotNil(reloaded)
+//	// TODO: Fix!
+//	suite.Assert().EqualValues(film, reloaded)
+//}
 
 //////////////////////////////////////////////////////////////////////////
 
-func (suite *YamlTestSuite) checkAlpha(act test.Actor) {
-	suite.Assert().NotNil(act)
-	alf, ok := act.(*test.Alpha)
-	suite.Assert().True(ok)
-	suite.Assert().NotNil(alf)
-	suite.Assert().Equal("Lance Lucky", alf.Name)
-	suite.Assert().Equal(float32(23.79), alf.Percent)
-	suite.Assert().Empty(alf.Extra())
+func MakeAccount() *Account {
+	account := &Account{}
+	account.MakeFake()
+	return account
 }
 
-func (suite *YamlTestSuite) checkBravo(act test.Actor) {
-	suite.Assert().NotNil(act)
-	bra, ok := act.(*test.Bravo)
-	suite.Assert().True(ok)
-	suite.Assert().NotNil(bra)
-	suite.Assert().True(bra.Finished)
-	suite.Assert().Equal(13, bra.Iterations)
-	suite.Assert().Empty(bra.Extra())
+type Account struct {
+	test.Account
 }
 
-func (suite *YamlTestSuite) makeTestFilm() *filmYaml {
-	actor1 := &test.Alpha{
-		Name:    "Goober Snoofus",
-		Percent: 13.23,
-	}
-	actor2 := &test.Bravo{
-		Finished:   true,
-		Iterations: 1957,
-	}
-	return &filmYaml{
-		Name: "",
-		Lead: actor1,
-		Cast: []test.Actor{
-			actor1,
-			actor2,
-		},
-		Index: map[string]test.Actor{
-			"Snoofus, Goober": actor1,
-			"Snarly, Booger":  actor2,
-		},
+type xferAccount struct {
+	Account struct {
+		Favorite  *Wrapper
+		Positions []*Wrapper
+		Lookup    map[string]*Wrapper
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////
+func (a *Account) MarshalYAML() (interface{}, error) {
+	xfer := &xferAccount{}
 
-type filmYaml struct {
-	yaml.Marshaler
-	yaml.Unmarshaler
-
-	Name  string
-	Lead  test.Actor
-	Cast  []test.Actor
-	Index map[string]test.Actor
-}
-
-func (film *filmYaml) addActor(name string, act test.Actor) {
-	film.Cast = append(film.Cast, act)
-	film.Index[name] = act
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-func (film *filmYaml) Marshal() (map[string]interface{}, error) {
-	toMap := map[string]interface{}{
-		"name": film.Name,
-	}
-
+	// Wrap objects referenced by interface fields.
 	var err error
-	if toMap["lead"], err = testMapper.Marshal(film.Lead); err != nil {
-		return nil, fmt.Errorf("converting lead to map: %w", err)
-	}
-
-	cast := make([]interface{}, len(film.Cast))
-	for i, member := range film.Cast {
-		if cast[i], err = testMapper.Marshal(member); err != nil {
-			return nil, fmt.Errorf("converting cast member to map: %w", err)
+	if a.Favorite != nil {
+		if xfer.Account.Favorite, err = WrapItem(a.Favorite); err != nil {
+			return nil, fmt.Errorf("wrap favorite: %w", err)
 		}
 	}
-	toMap["cast"] = cast
-
-	index := make(map[string]interface{}, len(film.Index))
-	for key, member := range film.Index {
-		if index[key], err = testMapper.Marshal(member); err != nil {
-			return nil, fmt.Errorf("converting cast member to map: %w", err)
+	if a.Positions != nil {
+		fixed := make([]*Wrapper, len(a.Positions))
+		for i, pos := range a.Positions {
+			if fixed[i], err = WrapItem(pos); err != nil {
+				return nil, fmt.Errorf("wrap Positions item: %w", err)
+			}
 		}
+		xfer.Account.Positions = fixed
 	}
-	toMap["index"] = index
+	if a.Lookup != nil {
+		fixed := make(map[string]*Wrapper, len(a.Lookup))
+		for k, pos := range a.Lookup {
+			if fixed[k], err = WrapItem(pos); err != nil {
+				return nil, fmt.Errorf("wrap Lookup item: %w", err)
+			}
+		}
+		xfer.Account.Lookup = fixed
+	}
 
-	return toMap, nil
+	return xfer, nil
 }
 
-func (film *filmYaml) Unmarshal(fromMap map[string]interface{}) error {
+func (a *Account) UnmarshalYAML(node *yaml.Node) error {
+	xfer := &xferAccount{}
+	if err := node.Decode(xfer); err != nil {
+		return fmt.Errorf("decode node: %w", err)
+	}
+
+	// Unwrap objects referenced by interface fields.
+	var err error
+	if a.Favorite, err = a.getInvestment(xfer.Account.Favorite); err != nil {
+		return fmt.Errorf("get Investment from Favorite")
+	}
+	if xfer.Account.Positions != nil {
+		fixed := make([]test.Investment, len(xfer.Account.Positions))
+		for i, wPos := range xfer.Account.Positions {
+			if fixed[i], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Positions")
+			}
+		}
+		a.Positions = fixed
+	}
+	if xfer.Account.Lookup != nil {
+		fixed := make(map[string]test.Investment, len(xfer.Account.Lookup))
+		for key, wPos := range xfer.Account.Lookup {
+			if fixed[key], err = a.getInvestment(wPos); err != nil {
+				return fmt.Errorf("get Investment from Lookup")
+			}
+		}
+		a.Lookup = fixed
+	}
+
+	return nil
+}
+
+func (a *Account) getInvestment(w *Wrapper) (test.Investment, error) {
 	var ok bool
-	if fromMap["name"] != nil {
-		if film.Name, ok = fromMap["name"].(string); !ok {
-			return fmt.Errorf("film name is not a string")
+	var investment test.Investment
+	if w != nil {
+		if item, err := w.Unwrap(); err != nil {
+			return nil, fmt.Errorf("unwrap item: %w", err)
+		} else if investment, ok = item.(test.Investment); !ok {
+			return nil, fmt.Errorf("item %#v not Investment", item)
 		}
 	}
 
-	var err error
-	if fromMap["lead"] != nil {
-		if film.Lead, err = film.pullActorFromMap(fromMap["lead"]); err != nil {
-			return fmt.Errorf("pull lead actor from map: %w", err)
-		}
-	}
-
-	if castElement, found := fromMap["cast"]; found && castElement != nil {
-		if cast, ok := castElement.([]interface{}); ok {
-			film.Cast = make([]test.Actor, 0, len(cast))
-			for _, actMap := range cast {
-				if act, err := film.pullActorFromMap(actMap); err != nil {
-					return fmt.Errorf("pulling actor from map: %w", err)
-				} else {
-					film.Cast = append(film.Cast, act)
-				}
-			}
-		}
-	}
-
-	if indexElement, found := fromMap["index"]; found && indexElement != nil {
-		if index, ok := indexElement.(map[string]interface{}); ok {
-			film.Index = make(map[string]test.Actor)
-			for key, actMap := range index {
-				if act, err := film.pullActorFromMap(actMap); err != nil {
-					return fmt.Errorf("pulling actor from map: %w", err)
-				} else {
-					film.Index[key] = act
-				}
-			}
-		}
-	}
-
-	return nil
+	return investment, nil
 }
-
-func (film *filmYaml) MarshalYAML() (interface{}, error) {
-	if toMap, err := film.Marshal(); err != nil {
-		return nil, fmt.Errorf("pushing film to map: %w", err)
-	} else {
-		return toMap, nil
-	}
-}
-
-func (film *filmYaml) UnmarshalYAML(value *yaml.Node) error {
-	if value.Kind != yaml.MappingNode {
-		return fmt.Errorf("not a mapping node for film")
-	}
-
-	// Simpler to code than pulling everything bit by bit from the value object.
-	// The latter might be faster, however.
-	temp := make(map[string]interface{})
-	if err := value.Decode(temp); err != nil {
-		return fmt.Errorf("decoding film to temp: %w", err)
-	}
-
-	if err := film.Unmarshal(temp); err != nil {
-		return fmt.Errorf("pulling film from map: %w", err)
-	}
-
-	return nil
-}
-
-func (film *filmYaml) pullActorFromMap(from interface{}) (test.Actor, error) {
-	if fromMap, ok := from.(map[string]interface{}); !ok {
-		return nil, fmt.Errorf("from is not a map")
-	} else if actItem, err := testMapper.Unmarshal(fromMap); err != nil {
-		return nil, fmt.Errorf("create actor from map: %w", err)
-	} else if act, ok := actItem.(test.Actor); !ok {
-		return nil, fmt.Errorf("created item is not an actor")
-	} else {
-		return act, nil
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////
-
-const simpleYaml = `
-<type>: '[testYAML]filmYaml'
-name:   'Blockbuster Movie'
-lead: {
-  <type>: '[test]Alpha',
-  name: 'Lance Lucky',
-  percent: 23.79,
-  extra: 'Yaaaa!'
-}
-cast:
-- {
-    <type>: '[test]Alpha',
-    name: 'Lance Lucky',
-    percent: 23.79,
-    extra: false
-  }
-- {
-    <type>: '[test]Bravo',
-    finished: true,
-    iterations: 13,
-    extra: 'gibbering ghostwhistle'
-  }
-index: {
-  'Lucky, Lance': {
-    <type>: '[test]Alpha',
-    name: 'Lance Lucky',
-    percent: 23.79,
-    extra: 'marshmallow stars'
-  },
-  'Queue, Susie': {
-    <type>: '[test]Bravo',
-    finished: true,
-    iterations: 13,
-    extra: 19.57
-  }
-}
-`

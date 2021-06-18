@@ -13,10 +13,14 @@ type Wrapper struct {
 	Contents json.RawMessage
 }
 
+func WrapItem(item interface{}) (*Wrapper, error) {
+	w := &Wrapper{}
+	return w, w.Wrap(item)
+}
+
 func (w *Wrapper) Wrap(item interface{}) error {
 	var err error
-	w.TypeName, err = reg.NameFor(item)
-	if err != nil {
+	if w.TypeName, err = reg.NameFor(item); err != nil {
 		return fmt.Errorf("get type name for %#v: %w", item, err)
 	}
 
@@ -41,9 +45,4 @@ func (w *Wrapper) Unwrap() (interface{}, error) {
 	} else {
 		return item, nil
 	}
-}
-
-func WrapItem(item interface{}) (*Wrapper, error) {
-	w := &Wrapper{}
-	return w, w.Wrap(item)
 }
