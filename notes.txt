@@ -1,1 +1,0 @@
-Redo README.md to be more general justification for and top level summary of code.

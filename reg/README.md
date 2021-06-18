@@ -2,32 +2,11 @@
 
 Type registration mechanism to support instance creation by class name.
 
-## Problem Description
-
-Deserialization of generalized Go interfaces is problematic.
-The applicadtion must generate *specific types* to implement an interface.
-Most serialization mechanisms (e.g. JSON or YAML) don't  have any way of
-storing the type information and existing serialization mechanisms only
-create objects of the specific type provided to the method call
-and so can't handle deserializing to interface fields.
-
-### Manual Solution
-
-It is possible to write custom code to handle this problem.
-Generally it involves:
-
-1. unmarshal to `interface{}` producing `map[string]interface{}`
-2. use information in the `map`
-   (e.g. a `Type` string field generated during serialization)
-   to determine the type of the object
-3. unmarshal from the map into a pointer of the correct type
-
-There are various examples of this available online.
-
-This is a viable strategy, but step 3 requires code from each type
-to be embedded into the `UnmarshalXXX` method for any struct or array
-containing the interface in question (interfaces can't have methods),
-resulting in a potential code maintenance issue.
+This package provides a dynamic type registry.
+Since the Go language doesn't provide dynamic class lookup by name
+there is no way to create classes that are unknown to a package.
+In cases requiring class creation by name (from a string)
+it is necessary to provide a way to register classes by name.
 
 ### Type Registration
 
@@ -67,23 +46,14 @@ Aliases may be defined for packages in order to reduce type name size
 in serialized data.
 An alias is specified with a string and an example instance from the package.
 
-After the Registry is created use `reg.Registry.Alias()` to specify
+After a `reg.Registry` is created use `reg.Registry.Alias()` to specify
 a name for the package, where the package is specified by a pointer
 to an example type from that package.
 
-The Registry object also contains a map of aliases.
-When registering a type the full type name is provided.
-The full type name is then stored in serialized objects.
+The `reg.Registry` object also contains a map of aliases.
+When registering a type the full type name is acquired and stored.
 Since these can be long it is possible to provide an alias to a package
 which will be used in serialized objects.
-
-## Supported Formats
-
-This package supports several serialization formats:
-
-* BSON (binary JSON, used in Mongo DB)
-* JSON
-* YAML
 
 ## Registration
 
@@ -97,6 +67,28 @@ and subsequent access will be read-only to underlying `map` objects
 this is probably sufficient for most usage.
 If not, use `reg.NewRegistrar()` to create a Registry object that
 uses mutex locks.
+
+### Global vs local Registry
+
+There is a global `reg.Registry` object created during initialization.
+The user may choose to use this via various functions
+or to create a local `reg.Registry` object and use its methods.
+The top-level functions that call the global `reg.Registry` object
+just use the methods.
+
+The problem with local `reg.Registry` objects is that they are not always available.
+Serializing objects provides a good example.
+The existing serialization libraries don't provide a way to
+attach data (in this case a `reg.Registry` object) to the encoder,
+nor do they pass `context.Context` objects down the call tree
+to be used by `json.MarshalJSON()` or `yaml.MarshalYAML()` or
+their unmarshal counterparts.
+In these cases a global `reg.Registry` is desirable if not necessary.
+
+While using global resources is generally considered bad,
+it is also good to consider why local registry objects might be needed.
+Is there some actual need to separate class registrations?
+After all, the classes themselves are global.
 
 A single global `reg.Registry` object is provided via the `reg.Highlander()` function.
 In the general case this will be sufficient for all use.
