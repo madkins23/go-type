@@ -6,16 +6,13 @@ import (
 	"strconv"
 	"testing"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/suite"
+	"gopkg.in/yaml.v3"
 
 	"github.com/madkins23/go-type/reg"
 	"github.com/madkins23/go-type/test"
 )
-
-// Trial and error approach to simplifying things.
 
 type YamlTestSuite struct {
 	suite.Suite
@@ -36,29 +33,9 @@ func (suite *YamlTestSuite) SetupSuite() {
 	suite.Require().NoError(reg.Register(&Account{}))
 }
 
-func (suite *YamlTestSuite) SetupTest() {
-}
-
 func TestYamlSuite(t *testing.T) {
 	suite.Run(t, new(YamlTestSuite))
 }
-
-//////////////////////////////////////////////////////////////////////////
-
-//// TestExample duplicates the YAML test.
-//// TODO: Not directly applicable to this test suite.
-//func (suite *JsonTestSuite) TestExample() {
-//	type T struct {
-//		F int `yaml:"a,omitempty"`
-//		B int
-//	}
-//	t := T{F: 1, B: 2}
-//	bytes, err := yaml.Marshal(t)
-//	suite.Assert().NoError(err)
-//	var x T
-//	suite.Assert().NoError(yaml.Unmarshal(bytes, &x))
-//	suite.Assert().Equal(t, x)
-//}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -94,64 +71,16 @@ func (suite *YamlTestSuite) TestMarshalCycle() {
 	suite.Assert().Equal(account, &newAccount)
 }
 
-//func (suite *JsonTestSuite) TestLoadFromString() {
-//	item, err := suite.converter.LoadFromString(simpleJson)
-//	suite.Assert().NoError(err)
-//	suite.Assert().NotNil(item)
-//}
-//
-//func (suite *JsonTestSuite) TestSaveToString() {
-//	text, err := suite.converter.SaveToString(suite.film)
-//	suite.Assert().NoError(err)
-//	suite.Assert().NotEmpty(text)
-//	suite.Assert().True(strings.Contains(text, `"<type>":"[testJSON]filmJson"`))
-//	suite.Assert().True(strings.Contains(text, `"<type>":"[test]Alpha"`))
-//	suite.Assert().True(strings.Contains(text, `"<type>":"[test]Bravo"`))
-//}
-//
-//func (suite *JsonTestSuite) TestMarshalFileCycle() {
-//	file, err := ioutil.TempFile("", "*.test.json")
-//	suite.Assert().NoError(err)
-//	suite.Assert().NotNil(file)
-//	fileName := file.Name()
-//	// Go ahead and close it, just needed the file name.
-//	suite.Assert().NoError(file.Close())
-//
-//	film := suite.makeTestFilm()
-//	suite.Assert().NoError(suite.converter.SaveToFile(film, fileName))
-//
-//	reloaded, err := suite.converter.LoadFromFile(fileName)
-//	suite.Assert().NoError(err)
-//	suite.Assert().NotNil(reloaded)
-//	// TODO: Fix!
-//	suite.Assert().Equal(film, reloaded)
-//}
-//
-//func (suite *JsonTestSuite) TestMarshalStringCycle() {
-//	film := suite.makeTestFilm()
-//	str, err := suite.converter.SaveToString(film)
-//	suite.Assert().NoError(err)
-//	suite.NotZero(str)
-//
-//	fmt.Print("--- TestMarshalStringCycle ---------\n", str, "------------------------------------\n")
-//
-//	reloaded, err := suite.converter.LoadFromString(str)
-//	suite.Assert().NoError(err)
-//	suite.Assert().NotNil(reloaded)
-//	// TODO: Fix!
-//	suite.Assert().EqualValues(film, reloaded)
-//}
-
 //////////////////////////////////////////////////////////////////////////
+
+type Account struct {
+	test.Account
+}
 
 func MakeAccount() *Account {
 	account := &Account{}
 	account.MakeFake()
 	return account
-}
-
-type Account struct {
-	test.Account
 }
 
 type xferAccount struct {
