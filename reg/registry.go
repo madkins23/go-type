@@ -6,36 +6,14 @@ import (
 	"strings"
 )
 
-const (
-	// TypeField is the name of the "type" field in serialized structs.
-	// This field name appears to be legal in JSON, YAML, and BSON (MongoDB).
-	TypeField = "<type>"
-
-	// TypeFieldEscaped is an alternate "type" field escaped for use in a regular expression.
-	// This is currently the same as TypeField since there are no regular expression characters.
-	TypeFieldEscaped = TypeField
-)
-
 // There can be only one...
 
 var theOne = NewRegistry()
-
-// FromMapFn loads an object from a generic map.
-type FromMapFn func(from map[string]interface{}, to interface{}) error
-
-// ToMapFn converts an object to a generic map.
-type ToMapFn func(from interface{}, to map[string]interface{}) error
 
 // Registry is the type registry interface.
 // A type registry tracks specific types by name, a facility not native to Go.
 // A type name in the registry is made up of package path and local type name.
 // Aliases may be specified to shorten the path to manageable lengths.
-//
-// A single "global" Registry is predefined and is accessible via
-// functions of the same names as the methods on the Registry interface.
-//
-// Non-global Registry objects can be generated for specific purposes.
-// Using these separate Registry objects is at the user's risk.
 type Registry interface {
 	AddAlias(alias string, example interface{}) error
 	Register(example interface{}) error
@@ -44,10 +22,6 @@ type Registry interface {
 }
 
 // NewRegistry creates a new Registry object of the default internal type.
-// Registries created via this function are not safe for concurrent access,
-// manage this access or use NewRegistrar() to create a concurrent safe version.
-// Note that common usage is to do all registration during startup and
-//  only do read access later so concurrent access may not ever be an issue.
 func NewRegistry() Registry {
 	return &registry{
 		byName:  make(map[string]*registration),
