@@ -1,24 +1,23 @@
 package reg
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/madkins23/go-type/test"
 )
 
 // These tests confirm the developer's understanding of how Go works.
 // More specifically how the Go reflection mechanism works.
 
 var (
-	a             = test.Alpha{Name: "Hubert", Percent: 17.23}
-	b             = test.Bravo{Finished: true, Iterations: 79}
-	c             = a
-	ai test.Actor = &a
-	bi test.Actor = &b
-	ci test.Actor = &c
+	a        = Alpha{Name: "Hubert", Number: 17.23}
+	b        = Bravo{Finished: true, Iterations: 79}
+	c        = a
+	ai Stuff = &a
+	bi Stuff = &b
+	ci Stuff = &c
 )
 
 //////////////////////////////////////////////////////////////////////////
@@ -37,11 +36,11 @@ func TestReflectSuite(t *testing.T) {
 // Verify method for determining path of package via an object defined therein.
 
 func (suite *ReflectTestSuite) TestPackagePath() {
-	suite.Assert().Equal(test.PackageName, reflect.TypeOf(test.Alpha{}).PkgPath())
+	suite.Assert().Equal(reflect.TypeOf(Alpha{}).PkgPath(), packageName)
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Make certain reflect.Type supports equivalence testing and use as map key.
+// MakeFake certain reflect.Type supports equivalence testing and use as map key.
 // Note that this does NOT work for types.Type, which is a different thing.
 
 func (suite *ReflectTestSuite) TestTypeEquivalence() {
@@ -74,4 +73,30 @@ func (suite *ReflectTestSuite) TestMapInterface() {
 	suite.Assert().Equal("charlie", lookup[reflect.TypeOf(ai)])
 	suite.Assert().Equal("bravo", lookup[reflect.TypeOf(bi)])
 	suite.Assert().Equal("charlie", lookup[reflect.TypeOf(ci)])
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+const packageName = "github.com/madkins23/go-type/reg"
+
+type Stuff interface {
+	Info() string
+}
+
+type Alpha struct {
+	Name   string
+	Number float32
+}
+
+func (a *Alpha) Info() string {
+	return fmt.Sprintf("%s: %f", a.Name, a.Number)
+}
+
+type Bravo struct {
+	Finished   bool
+	Iterations int
+}
+
+func (b *Bravo) Info() string {
+	return fmt.Sprintf("%t: %d", b.Finished, b.Iterations)
 }

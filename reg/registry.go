@@ -1,7 +1,6 @@
 package reg
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -17,7 +16,9 @@ const (
 	TypeFieldEscaped = TypeField
 )
 
-var ErrNilRegistry = errors.New("registry is nil")
+// There can be only one...
+
+var theOne = NewRegistry()
 
 // FromMapFn loads an object from a generic map.
 type FromMapFn func(from map[string]interface{}, to interface{}) error
