@@ -1,10 +1,10 @@
-// Package reg provides a type registration mechanism to support instance creation by class name.
+// Package reg provides a type registration mechanism to support instance creation by type name.
 //
 // This package provides a dynamic type registry.
-// Since the Go language doesn't provide dynamic class lookup by name
-// there is no way to create classes that are unknown to a package.
-// In cases requiring class creation by name (from a string)
-// it is necessary to provide a way to register classes by name.
+// Since the Go language doesn't provide dynamic type lookup by name
+// there is no way to create types that are unknown to a package.
+// In cases requiring creation of type instances by name (a string)
+// it is necessary to provide a way to register types by name.
 //
 // Type Registration
 //
@@ -12,11 +12,11 @@
 // the type name to a usable instance of the type
 // without hard-coding the types into the unmarshal code.
 // Type registration uses reflection to convert an example instance
-// of the class into a type name and type object during application initialization.
+// of the type into a type name and type object during application initialization.
 // After this the type object can be found by type name
 // and reflection can be used to generate a new instance of the appropriate type.
 //
-// Classes are registered early in program execution,
+// Types are registered early in program execution,
 // generally in init() blocks or during static global variable initialization.
 // During registration the name and type data is cached to speed reuse.
 // Subsequently the registry can be used to look up object type by name,
@@ -69,8 +69,8 @@
 //
 // While using global resources is generally considered bad,
 // it is also good to consider why local registry objects might be needed.
-// Is there some actual need to separate class registrations?
-// After all, the classes themselves are global.
+// Is there some actual need to separate type registrations?
+// After all, the types themselves are global.
 //
 // A single global reg.Registry object is provided via the reg.Highlander() function.
 // In the general case this will be sufficient for all use.

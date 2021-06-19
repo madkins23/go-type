@@ -2,7 +2,7 @@
 
 Go language type utilities.
 
-Currently there is only one type utility which provides a registry for named Go classes.
+Currently there is only one type utility that provides a registry for named Go types.
 This is implemented in the `reg` package.
 Other type utilities may be added in the future.
 
@@ -21,15 +21,15 @@ or [godoc](https://godoc.org/github.com/madkins23/go-type) for documentation.
 ## Package `reg`
 
 This package provides a dynamic type registry.
-Since the Go language doesn't provide dynamic class lookup by name
-there is no way to create classes that are unknown to a package
-that might be provided by an application.
-In cases requiring class creation by name (from a string)
-it is necessary to provide a way to register classes by name,
+Since the Go language doesn't provide dynamic type lookup by name
+there is no way to create instances of types that are unknown to a package
+but might be provided by an application using that package.
+In cases requiring type instance creation by name (from a string)
+it is necessary to provide a way to register types by name,
 look them up, and then create new instances thereof.
 
 The original motivation for this package is serialization of data
 into JSON or YAML.
-The deserialization of that data requires instance creation by class name.
+The deserialization of that data requires instance creation by type name.
 See [`go-serial`](https://github.com/madkins23/go-serial)
 for example usage of this package.
