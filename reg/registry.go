@@ -14,10 +14,23 @@ var theOne = NewRegistry()
 // A type registry tracks specific types by name, a facility not native to Go.
 // A type name in the registry is made up of package path and local type name.
 // Aliases may be specified to shorten the path to manageable lengths.
+//
+// The methods on this object are duplicated as top-level functions which
+// invoke the predefined global object.
 type Registry interface {
+	// AddAlias creates an alias to be used to shorten names.
+	// The alias must exist prior to registering applicable types.
+	// Redefining a pre-existing alias is an error.
 	AddAlias(alias string, example interface{}) error
+
+	// Register a type by providing an example object.
 	Register(example interface{}) error
+
+	// Make creates a new instance of the example object with the specified name.
+	// The new instance will be created with fields filled with zero values.
 	Make(name string) (interface{}, error)
+
+	// NameFor returns the current name for the registered type of the specified object.
 	NameFor(item interface{}) (string, error)
 }
 
