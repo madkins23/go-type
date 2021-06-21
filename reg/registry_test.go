@@ -85,6 +85,12 @@ func (suite *registryTestSuite) TestRegister() {
 	err = suite.registry.Register(example)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "previous registration")
+	type localStruct struct {
+		something string
+	}
+	err = suite.registry.Register(&localStruct{})
+	suite.Assert().Error(err)
+	suite.Assert().Contains(err.Error(), "is private")
 }
 
 func (suite *registryTestSuite) TestNameFor() {

@@ -9,9 +9,11 @@ import (
 
 const aliasName = "test"
 
-type example1 struct{}
+type Example1 struct{}
 
-type example2 struct{}
+type Example2 struct{}
+
+type example3 struct{}
 
 func TestAlias(t *testing.T) {
 	alias := NewAlias(aliasName, nil)
@@ -22,13 +24,14 @@ func TestAlias(t *testing.T) {
 	assert.False(t, alias.aliased)
 	assert.Len(t, reg.aliases, 0)
 	assert.Len(t, reg.byName, 0)
-	require.NoError(t, alias.Register(&example1{}))
+	require.NoError(t, alias.Register(&Example1{}))
 	assert.True(t, alias.aliased)
 	assert.Len(t, reg.aliases, 1)
 	assert.Len(t, reg.byName, 1)
 	// Since we can't redefine an alias (see registry_test.go)
 	// doing it twice would generate an error here.
-	require.NoError(t, alias.Register(&example2{}))
+	require.NoError(t, alias.Register(&Example2{}))
 	assert.Len(t, reg.aliases, 1)
 	assert.Len(t, reg.byName, 2)
+	require.Error(t, alias.Register(&example3{}))
 }

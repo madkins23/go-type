@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // There can be only one...
@@ -125,6 +127,12 @@ func (reg *registry) Register(example interface{}) error {
 	typeName := exType.String()
 	if strings.HasPrefix(typeName, "*") {
 		typeName = strings.TrimLeft(typeName, "*")
+	}
+
+	typeNameSplit := strings.Split(typeName, ".")
+	r, _ := utf8.DecodeRuneInString(typeNameSplit[len(typeNameSplit)-1])
+	if !unicode.IsUpper(r) {
+		return fmt.Errorf("type '%s' is private", typeName)
 	}
 
 	// Create registration record for this type.
