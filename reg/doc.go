@@ -1,16 +1,15 @@
 // Package reg provides a type registration mechanism to support instance creation by type name.
 //
-// This package provides a dynamic type registry.
-// Since the Go language doesn't provide dynamic type lookup by name
-// there is no way to create types that are unknown to a package.
+// The Reg package provides a dynamic type registry.
+// The Go language doesn't provide dynamic type lookup by name.
+// All type names are lost during compilation.
 // In cases requiring creation of type instances by name (a string)
 // it is necessary to provide a way to register types by name.
 //
 // Type Registration
 //
 // Creating a type registration mechanism provides a way to go from
-// the type name to a usable instance of the type
-// without hard-coding the types into the unmarshal code.
+// the type name to a usable instance of the type.
 // Type registration uses reflection to convert an example instance
 // of the type into a type name and type object during application initialization.
 // After this the type object can be found by type name
@@ -20,7 +19,7 @@
 // generally in init() blocks or during static global variable initialization.
 // During registration the name and type data is cached to speed reuse.
 // Subsequently the registry can be used to look up object type by name,
-// create new instance of type by name, and look up type name from instance.
+// create new instance of type by name, and look up type name from an instance.
 //
 // Type Naming
 //
@@ -29,16 +28,14 @@
 // (e.g. github.com/madkins23/go-type/reg) and type name.
 //
 // Registered types may have multiple names.
-// The first one is the full type name, the rest are names
-// created using aliases.
-// When finding a name for a registered type (e.g. during serialization)
-// the  shortest name will be returned.
+// The first one is the full type name, the rest are names created using aliases.
+// When finding a name for a registered type via NameFor() the  shortest name will be returned.
 // When finding the type from the name all names will be checked.
 //
 // Aliases
 //
 // Aliases may be defined for packages in order to reduce type name size
-// in serialized data.
+// when requesting a name via NameFor().
 // An alias is specified with a string and an example instance from the package.
 //
 // After a reg.Registry is created use reg.Registry.Alias() to specify

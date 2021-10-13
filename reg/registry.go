@@ -48,6 +48,7 @@ func NewRegistry() Registry {
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
+// Make sure the interface is satisfied at compile time.
 var _ Registry = &registry{}
 
 // Default Registry implementation.
@@ -82,13 +83,13 @@ type registration struct {
 // The alias must exist prior to registering applicable types.
 // Redefining a pre-existing alias is an error.
 func (reg *registry) AddAlias(alias string, example interface{}) error {
-	if _, ok := reg.aliases[alias]; ok {
+	if _, found := reg.aliases[alias]; found {
 		return fmt.Errorf("can't redefine alias %s", alias)
 	}
 
 	exampleType := reflect.TypeOf(example)
 	if exampleType == nil {
-		return fmt.Errorf("no type for alias %s (%v)", alias, example)
+		return fmt.Errorf("find type for alias %s (%v)", alias, example)
 	}
 
 	if exampleType.Kind() == reflect.Ptr {

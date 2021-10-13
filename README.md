@@ -21,8 +21,11 @@ or [godoc](https://godoc.org/github.com/madkins23/go-type) for documentation.
 ## Package `reg`
 
 This package provides a dynamic type registry.
-Since the Go language doesn't provide dynamic type lookup by name
-there is no way to create instances of types that are unknown to a package
+The Go language doesn't provide dynamic type lookup by type name.
+All of the type names are removed during compilation,
+so even using the `reflect` package they're invisible.
+
+There is thus no way to create instances of types that are unknown to a package
 but might be provided by an application using that package.
 In cases requiring type instance creation by name (from a string)
 it is necessary to provide a way to register types by name,
