@@ -101,6 +101,12 @@ func (suite *registryTestSuite) TestNameFor() {
 	suite.Assert().Equal(packageName+"/Alpha", exType)
 }
 
+func (suite *registryTestSuite) TestNameForNilItem() {
+	exType, err := suite.registry.NameFor(nil)
+	suite.Assert().Equal("", exType)
+	suite.Assert().ErrorIs(err, errItemIsNil)
+}
+
 func (suite *registryTestSuite) TestMake() {
 	example := &Alpha{}
 	suite.Assert().NoError(suite.registry.Register(example))

@@ -1,6 +1,7 @@
 package reg
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -167,9 +168,14 @@ func (reg *registry) Register(example interface{}) error {
 	return nil
 }
 
+var errItemIsNil = errors.New("item is nil")
+
 // NameFor returns the current name for the registered type of the specified object.
 func (reg *registry) NameFor(item interface{}) (string, error) {
 	itemType := reflect.TypeOf(item)
+	if itemType == nil {
+		return "", errItemIsNil
+	}
 	if itemType.Kind() == reflect.Ptr {
 		itemType = itemType.Elem()
 	}
