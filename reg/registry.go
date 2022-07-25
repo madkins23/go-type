@@ -35,14 +35,18 @@ type Registry interface {
 
 	// NameFor returns the current name for the registered type of the specified object.
 	NameFor(item interface{}) (string, error)
+
+	// Clear removes all previous aliases and registrations.
+	// Intended for use in unit tests in the same package to avoid overlaps.
+	Clear()
 }
 
 // NewRegistry creates a new Registry object of the default internal type.
 func NewRegistry() Registry {
 	return &registry{
+		aliases: make(map[string]string),
 		byName:  make(map[string]*registration),
 		byType:  make(map[reflect.Type]*registration),
-		aliases: make(map[string]string),
 	}
 }
 
@@ -197,6 +201,12 @@ func (reg *registry) Make(name string) (interface{}, error) {
 	}
 
 	return reflect.New(item.typeObj).Interface(), nil
+}
+
+func (reg *registry) Clear() {
+	reg.aliases = make(map[string]string)
+	reg.byName = make(map[string]*registration)
+	reg.byType = make(map[reflect.Type]*registration)
 }
 
 //////////////////////////////////////////////////////////////////////////

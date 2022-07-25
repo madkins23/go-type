@@ -4,7 +4,7 @@ import "sync"
 
 // NewRegistrar creates a new Registrar object of the default internal type.
 // Registries created via this function are mutex locked for concurrent access.
-// This is probably redundant vigorously untested.
+// This is probably redundant and is vigorously untested.
 func NewRegistrar() Registry {
 	return &registrar{
 		Registry: NewRegistry(),

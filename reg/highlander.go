@@ -19,7 +19,7 @@ func AddAlias(alias string, example interface{}) error {
 	return theOne.AddAlias(alias, example)
 }
 
-// Make invokes reg.Highlander().MakeFake().
+// Make invokes reg.Highlander().Make().
 func Make(name string) (interface{}, error) {
 	return theOne.Make(name)
 }
