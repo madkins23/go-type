@@ -18,7 +18,7 @@
 // Types are registered early in program execution,
 // generally in init() blocks or during static global variable initialization.
 // During registration the name and type data is cached to speed reuse.
-// Subsequently the registry can be used to look up object type by name,
+// The registry can then be used to look up object type by name,
 // create new instance of type by name, and look up type name from an instance.
 //
 // Type Naming
@@ -64,13 +64,18 @@
 // their unmarshal counterparts.
 // In these cases a global reg.Registry is desirable if not necessary.
 //
+// A single global reg.Registry object is provided via the reg.Highlander function.
+// In addition, there are top-level functions that use the current value of reg.Highlander.
+//
+//	* reg.AddAlias
+//	* reg.Make
+//	* reg.NameFor
+//	* reg.Register
+//
 // While using global resources is generally considered bad,
 // it is also good to consider why local registry objects might be needed.
 // Is there some actual need to separate type registrations?
 // After all, the types themselves are global.
-//
-// A single global reg.Registry object is provided via the reg.Highlander() function.
-// In the general case this will be sufficient for all use.
 //
 // Concurrency
 //

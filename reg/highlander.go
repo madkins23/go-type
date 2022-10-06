@@ -2,6 +2,10 @@ package reg
 
 // Apologies for the Highlander nomenclature.  ;-)
 
+// There can be only one...
+
+var theOne = NewRegistry()
+
 // Highlander returns the global Registry object created during initialization.
 // Normally there will only be one Registry in use for the entire application.
 // It is not necessary to use the global Registry, it is just convenient.

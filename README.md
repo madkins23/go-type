@@ -2,21 +2,14 @@
 
 Go language type utilities.
 
+![GitHub](https://img.shields.io/github/license/madkins23/go-type)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/madkins23/go-type)
+
+# Packages
+
 Currently there is only one type utility that provides a registry for named Go types.
 This is implemented in the `reg` package.
 Other type utilities may be added in the future.
-
-### Caveats
-
-You are more than welcome to use this software as is but these are
-utility packages constructed by the author for use in personal projects.
-The author makes occasional changes and attempts to follow proper versioning and release protocols,
-however this code should not be considered production quality or maintained.
-
-*Consider copying the code into your own project and modifying to fit your need.*
-
-See the [source](https://github.com/madkins23/go-type)
-or [godoc](https://godoc.org/github.com/madkins23/go-type) for documentation.
 
 ## Package `reg`
 

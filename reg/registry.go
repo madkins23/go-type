@@ -9,10 +9,6 @@ import (
 	"unicode/utf8"
 )
 
-// There can be only one...
-
-var theOne = NewRegistry()
-
 // Registry is the type registry interface.
 // A type registry tracks specific types by name, a facility not native to Go.
 // A type name in the registry is made up of package path and local type name.
