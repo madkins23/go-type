@@ -2,6 +2,9 @@
 
 Go language type utilities.
 
+See the [source](https://github.com/madkins23/go-type)
+or [godoc](https://godoc.org/github.com/madkins23/go-type) for more detailed documentation.
+
 ![GitHub](https://img.shields.io/github/license/madkins23/go-type)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/madkins23/go-type)
 
