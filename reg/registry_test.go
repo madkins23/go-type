@@ -176,10 +176,10 @@ func (suite *registryTestSuite) TestGenNames() {
 	suite.Assert().NotNil(aliases)
 	suite.Assert().Len(aliases, 1)
 
-	name, aliases, err = suite.reg.genNames(&example, true)
+	_, _, err = suite.reg.genNames(&example, true)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "no path for type")
-	name, aliases, err = suite.reg.genNames(1, true)
+	_, _, err = suite.reg.genNames(1, true)
 	suite.Assert().Error(err)
 	suite.Assert().Contains(err.Error(), "no path for type")
 }
