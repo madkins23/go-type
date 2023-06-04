@@ -6,7 +6,7 @@
 // In cases requiring creation of type instances by name (a string)
 // it is necessary to provide a way to register types by name.
 //
-// Type Registration
+// # Type Registration
 //
 // Creating a type registration mechanism provides a way to go from
 // the type name to a usable instance of the type.
@@ -21,7 +21,7 @@
 // The registry can then be used to look up object type by name,
 // create new instance of type by name, and look up type name from an instance.
 //
-// Type Naming
+// # Type Naming
 //
 // Full type names are acquired from the Go Type object.
 // The full name is a combination of the package path
@@ -32,7 +32,7 @@
 // When finding a name for a registered type via NameFor() the  shortest name will be returned.
 // When finding the type from the name all names will be checked.
 //
-// Aliases
+// # Aliases
 //
 // Aliases may be defined for packages in order to reduce type name size
 // when requesting a name via NameFor().
@@ -47,7 +47,7 @@
 // Since these can be long it is possible to provide an alias to a package
 // which will be used in serialized objects.
 //
-// Global vs local Registry
+// # Global vs local Registry
 //
 // There is a global reg.Registry object created during initialization.
 // The user may choose to use this via various functions
@@ -64,20 +64,20 @@
 // their unmarshal counterparts.
 // In these cases a global reg.Registry is desirable if not necessary.
 //
-// A single global reg.Registry object is provided via the reg.Highlander function.
-// In addition, there are top-level functions that use the current value of reg.Highlander.
+// A single global reg.Registry object is provided via the reg.Singleton function.
+// In addition, there are top-level functions that use the current value of reg.Singleton.
 //
-//	* reg.AddAlias
-//	* reg.Make
-//	* reg.NameFor
-//	* reg.Register
+//   - reg.AddAlias
+//   - reg.Make
+//   - reg.NameFor
+//   - reg.Register
 //
 // While using global resources is generally considered bad,
 // it is also good to consider why local registry objects might be needed.
 // Is there some actual need to separate type registrations?
 // After all, the types themselves are global.
 //
-// Concurrency
+// # Concurrency
 //
 // The basic registry object is not guaranteed safe for concurrent access.
 // Since the type registration should be done at application startup
